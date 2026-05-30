@@ -530,6 +530,33 @@
     animation: hintBreathe 3s ease-in-out infinite 4s;
   }
 
+  /* Wrapper for hint + visual progress */
+  .answer-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .answer-progress {
+    width: 96px;
+    height: 1px;
+    background: rgba(255, 245, 227, 0.10);
+    position: relative;
+    opacity: 0;
+    transition: opacity 1200ms ease 4200ms;
+  }
+  .question-stage.show .answer-progress { opacity: 1; }
+  .answer-fill {
+    position: absolute;
+    left: 50%; top: 0;
+    height: 1px;
+    width: 0%;
+    background: var(--gold);
+    box-shadow: 0 0 6px var(--gold), 0 0 18px rgba(240, 200, 137, 0.45);
+    transform: translateX(-50%);
+    transition: width 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
   /* ────────── Celebration ────────── */
   .celebration {
     position: fixed; inset: 0;
@@ -759,7 +786,10 @@
   <div class="ask-wrap">
     <div class="the-ask" id="q-ask"></div>
   </div>
-  <div class="answer-hint">open both hands</div>
+  <div class="answer-zone">
+    <div class="answer-hint">open both hands</div>
+    <div class="answer-progress"><div class="answer-fill" id="yes-fill"></div></div>
+  </div>
 </div>
 
 <!-- Stage 6: Celebration -->
@@ -810,7 +840,7 @@ const CONFIG = {
   handsTogetherThreshold: 1.6,  // world-units between two wrists to count as "together"
   openHandThreshold: 0.62,
   heartHoldFrames: 90,          // ~1.5s @ 60fps
-  yesHoldFrames: 90,
+  yesHoldFrames: 60,            // ~1s of confident open-hand detection
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1087,12 +1117,23 @@ function dist2D(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
 function handSize(lms) { return dist2D(lms[0], lms[9]) + 1e-6; }
 function pinchRatio(lms) { return dist2D(lms[4], lms[8]) / handSize(lms); }
 function isPinching(lms) { return pinchRatio(lms) < CONFIG.pinchThreshold; }
+
+// Orientation-invariant finger-extension test:
+// when a finger is extended, the tip is much further from the MCP joint
+// than the PIP joint is — regardless of which way the hand is pointing.
+function fingerExtended(lms, mcp, pip, tip, factor = 1.55) {
+  return dist2D(lms[mcp], lms[tip]) > dist2D(lms[mcp], lms[pip]) * factor;
+}
+
 function isOpenHand(lms) {
-  const h = handSize(lms);
-  const tips = [8, 12, 16, 20];
   let extended = 0;
-  for (const tip of tips) if (dist2D(lms[0], lms[tip]) / h > 1.7) extended++;
-  const thumbOut = dist2D(lms[4], lms[5]) / h > CONFIG.openHandThreshold;
+  if (fingerExtended(lms,  5,  6,  8)) extended++; // index
+  if (fingerExtended(lms,  9, 10, 12)) extended++; // middle
+  if (fingerExtended(lms, 13, 14, 16)) extended++; // ring
+  if (fingerExtended(lms, 17, 18, 20)) extended++; // pinky
+  const h = handSize(lms);
+  const thumbOut = dist2D(lms[4], lms[5]) / h > 0.48;
+  // 3 of 4 long fingers extended + thumb out → open palm
   return extended >= 3 && thumbOut;
 }
 
@@ -1510,7 +1551,12 @@ function logicQuestion() {
     bothOpen = isOpenHand(hands[0].lms) && isOpenHand(hands[1].lms);
   }
   if (bothOpen) state.yesHoldFrames++;
-  else state.yesHoldFrames = Math.max(0, state.yesHoldFrames - 2);
+  else state.yesHoldFrames = Math.max(0, state.yesHoldFrames - 1);
+
+  // Drive the visual progress fill so she can see "yes" being detected
+  const pct = Math.min(100, (state.yesHoldFrames / CONFIG.yesHoldFrames) * 100);
+  const fill = document.getElementById('yes-fill');
+  if (fill) fill.style.width = pct + '%';
 
   if (state.yesHoldFrames > CONFIG.yesHoldFrames) {
     setStage(Stage.CELEBRATION);
