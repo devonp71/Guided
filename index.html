@@ -6,19 +6,17 @@
 <title>for you,</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Italianno&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg-deep:    #0a070d;
-    --bg-warm:    #14090f;
-    --cream:      #fff5e3;
-    --cream-soft: rgba(255, 245, 227, 0.78);
-    --cream-dim:  rgba(255, 245, 227, 0.48);
-    --cream-quiet:rgba(255, 245, 227, 0.28);
-    --gold:       #f0c889;
-    --gold-deep:  #c89a5c;
-    --rose:       #d8a0a8;
-    --rose-deep:  #a44b58;
+    --bg-deep:    #0a0a0d;
+    --bg-warm:    #14110f;
+    --cream:      #f5ede0;
+    --cream-soft: rgba(245, 237, 224, 0.78);
+    --cream-dim:  rgba(245, 237, 224, 0.48);
+    --cream-quiet:rgba(245, 237, 224, 0.28);
+    --gold:       #d4a866;
+    --gold-deep:  #9a7842;
     --safe-top:    env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
@@ -32,8 +30,8 @@
     -webkit-user-select: none;
     touch-action: manipulation;
     background:
-      radial-gradient(ellipse 80% 60% at 50% 45%, rgba(164, 75, 88, 0.05) 0%, transparent 60%),
-      radial-gradient(ellipse 70% 50% at 50% 95%, rgba(240, 200, 137, 0.03) 0%, transparent 60%),
+      radial-gradient(ellipse 80% 60% at 50% 45%, rgba(212, 168, 102, 0.04) 0%, transparent 65%),
+      radial-gradient(ellipse 70% 50% at 50% 100%, rgba(212, 168, 102, 0.025) 0%, transparent 60%),
       var(--bg-deep);
   }
 
@@ -64,7 +62,7 @@
     box-shadow:
       0 12px 40px rgba(0, 0, 0, 0.6),
       0 0 0 1px rgba(255, 245, 227, 0.04) inset,
-      0 0 30px rgba(216, 160, 168, 0.08);
+      0 0 30px rgba(212, 168, 102, 0.06);
     z-index: 6;
     opacity: 0;
     transform: translateY(-8px);
@@ -237,21 +235,23 @@
     opacity: 0.55;
   }
 
-  /* Hero script (Italianno) — "for you," */
-  .hero-script {
-    font-family: 'Italianno', cursive;
-    font-weight: 400;
-    font-size: clamp(96px, 26vw, 180px);
-    line-height: 0.92;
+  /* Hero — confident serif (replaced Italianno script) */
+  .hero {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-style: normal;
+    font-size: clamp(38px, 10vw, 60px);
+    line-height: 1.12;
     color: var(--cream);
-    letter-spacing: 0.5px;
-    text-shadow:
-      0 0 50px rgba(255, 245, 227, 0.18),
-      0 0 110px rgba(216, 160, 168, 0.14),
-      0 0 200px rgba(240, 200, 137, 0.08);
+    letter-spacing: 0.3px;
+    text-shadow: 0 0 60px rgba(245, 237, 224, 0.06);
+  }
+  .hero em {
+    font-style: italic;
+    font-weight: 300;
   }
 
-  /* Hero statement (serif, medium) — instructional headlines */
+  /* Hero statement (instructional) */
   .hero-statement {
     font-family: 'Cormorant Garamond', serif;
     font-weight: 300;
@@ -265,25 +265,12 @@
     font-weight: 400;
   }
 
-  /* Ornament rule with center mark */
-  .ornament {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    margin: 36px 0 32px;
-    color: var(--gold);
-    opacity: 0.55;
-  }
-  .ornament .line {
-    width: 36px; height: 1px;
-    background: linear-gradient(90deg, transparent, currentColor 30%, currentColor 70%, transparent);
-  }
-  .ornament .mark {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 13px;
-    line-height: 1;
-    transform: translateY(-1px);
+  /* Thin separator rule (replaces ❦ ornament) */
+  .rule {
+    width: 28px; height: 1px;
+    background: var(--gold);
+    opacity: 0.4;
+    margin: 32px auto;
   }
 
   /* Body whisper text */
@@ -382,10 +369,10 @@
     font-family: 'Cormorant Garamond', serif;
     font-weight: 300;
     font-style: italic;
-    font-size: clamp(24px, 6.6vw, 34px);
-    line-height: 1.5;
+    font-size: clamp(26px, 6.8vw, 36px);
+    line-height: 1.45;
     color: var(--cream);
-    text-shadow: 0 0 32px rgba(255, 245, 227, 0.18);
+    text-shadow: 0 0 24px rgba(245, 237, 224, 0.10);
     letter-spacing: 0.2px;
   }
 
@@ -457,15 +444,16 @@
     text-align: center;
   }
   .question-stage .her-name {
-    font-family: 'Italianno', cursive;
-    font-size: clamp(64px, 16vw, 110px);
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 400;
+    font-style: italic;
+    font-size: clamp(20px, 5vw, 26px);
     line-height: 1;
-    color: var(--cream);
+    color: var(--cream-soft);
     opacity: 0;
     transform: translateY(10px);
     transition: opacity 2400ms cubic-bezier(0.16,1,0.3,1) 400ms,
                 transform 2400ms cubic-bezier(0.16,1,0.3,1) 400ms;
-    text-shadow: 0 0 40px rgba(216, 160, 168, 0.35);
     letter-spacing: 0.4px;
   }
   .question-stage.show .her-name { opacity: 1; transform: translateY(0); }
@@ -568,20 +556,20 @@
     pointer-events: none;
   }
   .celebration .yes {
-    font-family: 'Italianno', cursive;
-    font-size: clamp(160px, 44vw, 320px);
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: clamp(90px, 26vw, 180px);
     line-height: 1;
     color: var(--cream);
     opacity: 0;
-    transform: scale(0.82);
+    transform: scale(0.88);
     transition:
       opacity 2400ms cubic-bezier(0.16, 1, 0.3, 1),
       transform 3000ms cubic-bezier(0.16, 1, 0.3, 1);
     text-shadow:
-      0 0 70px rgba(255, 245, 227, 0.4),
-      0 0 140px rgba(216, 160, 168, 0.3),
-      0 0 240px rgba(240, 200, 137, 0.18);
-    letter-spacing: 0.5px;
+      0 0 50px rgba(245, 237, 224, 0.25),
+      0 0 120px rgba(212, 168, 102, 0.18);
+    letter-spacing: -0.5px;
   }
   .celebration.show .yes { opacity: 1; transform: scale(1); }
   .celebration .closing {
@@ -643,7 +631,7 @@
     font-size: 11px;
     letter-spacing: 0.5em;
     text-transform: uppercase;
-    color: var(--rose-deep);
+    color: var(--gold-deep);
     margin-bottom: 24px;
     text-indent: 0.5em;
   }
@@ -678,25 +666,17 @@
 <!-- Stage 0: Welcome -->
 <div id="stage-welcome" class="overlay interactive">
   <div class="panel">
-    <div class="zone-top">
-      <div class="reveal reveal-1 eyebrow">an invitation</div>
-    </div>
+    <div class="zone-top"></div>
     <div class="zone-main halo">
-      <h1 class="reveal reveal-2 hero-script">for you,</h1>
-      <div class="reveal reveal-3 ornament">
-        <span class="line"></span>
-        <span class="mark">❦</span>
-        <span class="line"></span>
-      </div>
-      <p class="reveal reveal-4 body-whisper">
-        Find somewhere quiet.<br/>
-        Take a breath.<br/>
-        When you're ready —<br/>
-        <em>begin.</em>
+      <h1 class="reveal reveal-1 hero">before i ask you<br/>something —</h1>
+      <div class="reveal reveal-2 rule"></div>
+      <p class="reveal reveal-3 body-whisper">
+        find somewhere quiet.<br/>
+        take a minute.
       </p>
     </div>
     <div class="zone-bottom">
-      <button id="btn-begin" class="reveal reveal-5 cta">
+      <button id="btn-begin" class="reveal reveal-4 cta">
         <span>begin</span>
         <span class="arrow">→</span>
       </button>
@@ -707,25 +687,21 @@
 <!-- Stage 1: Setup -->
 <div id="stage-setup" class="overlay interactive" style="display:none">
   <div class="panel">
-    <div class="zone-top">
-      <div class="reveal reveal-1 eyebrow">a small thing</div>
-    </div>
+    <div class="zone-top"></div>
     <div class="zone-main halo">
-      <h2 class="reveal reveal-2 hero-statement">
-        Prop your phone up<br/>
-        where you can <em>step back</em>
+      <h2 class="reveal reveal-1 hero-statement">
+        Step back from your phone.<br/>
+        Prop it where it can see<br/>
+        your hands.
       </h2>
-      <div class="reveal reveal-3 ornament">
-        <span class="line"></span><span class="mark">❦</span><span class="line"></span>
-      </div>
-      <p class="reveal reveal-4 body-whisper">
-        I'll need to see your hands.<br/>
-        Nothing is recorded —<br/>
-        <em>only this moment, only us.</em>
+      <div class="reveal reveal-2 rule"></div>
+      <p class="reveal reveal-3 body-whisper">
+        Nothing is recorded.<br/>
+        Only this moment.
       </p>
     </div>
     <div class="zone-bottom">
-      <button id="btn-camera" class="reveal reveal-5 cta">
+      <button id="btn-camera" class="reveal reveal-4 cta">
         <span>allow camera</span>
         <span class="arrow">→</span>
       </button>
@@ -748,18 +724,14 @@
 <!-- Stage 2: Calibration -->
 <div id="stage-calibrate" class="overlay" style="display:none">
   <div class="panel">
-    <div class="zone-top">
-      <div class="reveal reveal-1 eyebrow">begin</div>
-    </div>
+    <div class="zone-top"></div>
     <div class="zone-main halo">
-      <h2 class="reveal reveal-2 hero-statement">
+      <h2 class="reveal reveal-1 hero-statement">
         Reach out.
       </h2>
-      <div class="reveal reveal-3 ornament">
-        <span class="line"></span><span class="mark">❦</span><span class="line"></span>
-      </div>
-      <p class="reveal reveal-4 body-whisper">
-        let the light <em>find your hands.</em>
+      <div class="reveal reveal-2 rule"></div>
+      <p class="reveal reveal-3 body-whisper">
+        Show me your hands.
       </p>
     </div>
     <div class="zone-bottom"></div>
@@ -768,7 +740,7 @@
 
 <!-- Stage 3: Awakening -->
 <div id="stage-awakening" style="display:none">
-  <div id="hint-awakening" class="hint">pinch to gather</div>
+  <div id="hint-awakening" class="hint">pinch to skip</div>
   <div id="message-reveal" class="message-reveal">
     <div class="quote" id="message-text"></div>
   </div>
@@ -777,7 +749,7 @@
 
 <!-- Stage 4: Heart -->
 <div id="stage-heart" style="display:none">
-  <div id="hint-heart" class="hint show">bring your hands together</div>
+  <div id="hint-heart" class="hint show">hands together</div>
 </div>
 
 <!-- Stage 5: Question -->
@@ -815,32 +787,32 @@ import { HandLandmarker, FilesetResolver } from 'https://cdn.jsdelivr.net/npm/@m
 // ═══════════════════════════════════════════════════════════════════
 
 const CONFIG = {
-  // Her name (appears at the question)
-  herName: "Sweetheart",
+  // Her name (displayed quietly above the question — replace this)
+  herName: "[her name]",
 
   // The big question
-  question: "will you be mine,\nofficially?",
+  question: "will you be my girlfriend?",
 
   // Closing line after she says yes
-  closing: "thank you for being you.",
+  closing: "okay then.",
 
-  // Messages revealed one by one as she pinches during the Awakening.
-  // Each pinch reveals one. Add as many as you want.
+  // Reflection messages — auto-advance during the Awakening stage.
+  // Replace these with specific, grounded lines for her.
+  // Each message displays for ~6 seconds. A pinch skips ahead.
   messages: [
-    "you arrived like a sunrise\ni didn't see coming",
-    "and i found myself counting\nthe hours till the next time",
-    "every small thing you do —\ni notice. i keep them.",
-    "you make ordinary days\nfeel like a soft place to land",
-    "and i can't imagine a single one\nwithout you in it",
+    "we've been good together.",
+    "the easy days. the hard ones too.",
+    "i don't want to keep this loose.",
+    "i want it on purpose.",
   ],
 
   // Tunables
   particleCount: 5200,
-  pinchThreshold: 0.45,         // ratio of (thumb-index distance) to hand size. Lower = tighter pinch
-  handsTogetherThreshold: 1.6,  // world-units between two wrists to count as "together"
-  openHandThreshold: 0.62,
+  pinchThreshold: 0.45,
+  handsTogetherThreshold: 1.6,
   heartHoldFrames: 90,          // ~1.5s @ 60fps
   yesHoldFrames: 60,            // ~1s of confident open-hand detection
+  messageDwellMs: 6000,         // how long each reflection message stays on screen
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -891,9 +863,9 @@ function makeGlowTexture() {
   const ctx = c.getContext('2d');
   const g = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
   g.addColorStop(0.00, 'rgba(255, 255, 255, 1.0)');
-  g.addColorStop(0.08, 'rgba(255, 250, 230, 0.95)');
-  g.addColorStop(0.22, 'rgba(245, 210, 154, 0.40)');
-  g.addColorStop(0.55, 'rgba(216, 160, 168, 0.10)');
+  g.addColorStop(0.08, 'rgba(255, 248, 224, 0.95)');
+  g.addColorStop(0.22, 'rgba(240, 200, 137, 0.40)');
+  g.addColorStop(0.55, 'rgba(212, 168, 102, 0.10)');
   g.addColorStop(1.00, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
@@ -949,13 +921,13 @@ function seedAmbient() {
     velocities[i*3+1] = (Math.random() - 0.5) * 0.004;
     velocities[i*3+2] = (Math.random() - 0.5) * 0.002;
 
-    // Color palette — cream-dominant, champagne and rose accents
+    // Color palette — cream-dominant, warm amber accents (no pink/rose)
     const r = Math.random();
     let col;
-    if      (r < 0.55) col = [1.00, 0.96, 0.88];    // cream
-    else if (r < 0.80) col = [0.96, 0.82, 0.60];    // champagne
-    else if (r < 0.95) col = [0.85, 0.63, 0.66];    // soft rose
-    else               col = [0.72, 0.36, 0.42];    // deep rose (rare)
+    if      (r < 0.62) col = [1.00, 0.96, 0.88];    // cream
+    else if (r < 0.86) col = [0.96, 0.83, 0.58];    // champagne
+    else if (r < 0.96) col = [0.82, 0.65, 0.42];    // muted amber
+    else               col = [0.55, 0.42, 0.28];    // deep amber (rare)
 
     // Dim distant particles (atmospheric depth)
     const depthDim = z < -1 ? 0.55 : (z < 0 ? 0.85 : 1.0);
@@ -1230,7 +1202,8 @@ let stage = Stage.WELCOME;
 const state = {
   calibrateHoldFrames: 0,
   pinchActive: false,
-  messageIndex: -1,
+  messageIndex: 0,
+  messageStartedAt: 0,
   heartHoldFrames: 0,
   heartScaleCurrent: 0.0,
   questionShownAt: 0,
@@ -1272,6 +1245,9 @@ function setStage(next) {
       document.getElementById('stage-awakening').style.display = 'block';
       document.getElementById('hint-awakening').classList.add('show');
       document.getElementById('progress').classList.add('show');
+      state.messageIndex = 0;
+      state.messageStartedAt = performance.now();
+      showMessage(0);
       renderTicks();
       break;
 
@@ -1491,33 +1467,47 @@ function logicCalibrate() {
 }
 
 function logicAwakening() {
-  applyHandForces(0.10);
+  // Gentle ambient gesture — hands softly shape particles without demanding precision
+  applyHandForces(0.06);
 
-  let anyPinch = false, pinchCenter = null;
-  for (const h of hands) {
-    if (isPinching(h.lms)) {
-      anyPinch = true;
-      const a = h.worldLms[4], b = h.worldLms[8];
-      pinchCenter = new THREE.Vector3((a.x+b.x)/2, (a.y+b.y)/2, (a.z+b.z)/2);
-      break;
+  const now = performance.now();
+  const elapsed = now - state.messageStartedAt;
+
+  // Auto-advance after dwell time elapses
+  if (elapsed > CONFIG.messageDwellMs) {
+    if (state.messageIndex < CONFIG.messages.length - 1) {
+      advanceMessage();
+    } else if (elapsed > CONFIG.messageDwellMs + 2400) {
+      // Linger on the last message a beat longer, then move on
+      setStage(Stage.HEART);
+      state.messageStartedAt = -999999;
+      return;
     }
   }
 
-  if (anyPinch && pinchCenter && !state.pinchActive) {
-    state.pinchActive = true;
-    collectNearPoint(pinchCenter, 0.9);
-    state.messageIndex = Math.min(state.messageIndex + 1, CONFIG.messages.length - 1);
-    showMessage(state.messageIndex);
-    renderTicks();
+  // Pinch — optional skip-ahead. Brief grace period prevents accidental skip
+  // immediately after a new message appears.
+  let anyPinch = false;
+  for (const h of hands) if (isPinching(h.lms)) { anyPinch = true; break; }
 
-    if (state.messageIndex >= CONFIG.messages.length - 1) {
-      setTimeout(() => {
-        if (stage === Stage.AWAKENING) setStage(Stage.HEART);
-      }, 4600);
+  if (anyPinch && !state.pinchActive && elapsed > 800) {
+    state.pinchActive = true;
+    if (state.messageIndex < CONFIG.messages.length - 1) {
+      advanceMessage();
+    } else {
+      setStage(Stage.HEART);
+      state.messageStartedAt = -999999;
     }
   } else if (!anyPinch) {
     state.pinchActive = false;
   }
+}
+
+function advanceMessage() {
+  state.messageIndex++;
+  state.messageStartedAt = performance.now();
+  showMessage(state.messageIndex);
+  renderTicks();
 }
 
 function logicHeart() {
