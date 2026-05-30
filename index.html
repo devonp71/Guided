@@ -51,22 +51,80 @@
     opacity: 0; pointer-events: none;
   }
 
-  /* Small refined preview */
-  #preview {
+  /* Preview frame — camera + hand-tracking overlay */
+  .preview-frame {
     position: fixed;
-    top: calc(var(--safe-top) + 18px); right: 18px;
-    width: 44px; height: 60px;
-    object-fit: cover;
-    border-radius: 6px;
-    border: 1px solid rgba(255, 245, 227, 0.14);
+    top: calc(var(--safe-top) + 18px);
+    right: 16px;
+    width: clamp(168px, 42vw, 220px);
+    aspect-ratio: 3 / 4;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 245, 227, 0.18);
+    box-shadow:
+      0 12px 40px rgba(0, 0, 0, 0.6),
+      0 0 0 1px rgba(255, 245, 227, 0.04) inset,
+      0 0 30px rgba(216, 160, 168, 0.08);
     z-index: 6;
-    transform: scaleX(-1);
     opacity: 0;
-    transition: opacity 900ms ease;
+    transform: translateY(-8px);
+    transition:
+      opacity 900ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
     pointer-events: none;
-    filter: brightness(0.7) contrast(0.9);
+    background: var(--bg-deep);
   }
-  #preview.visible { opacity: 0.38; }
+  .preview-frame.visible { opacity: 1; transform: translateY(0); }
+
+  /* Both video and overlay share a mirrored container */
+  .preview-mirror {
+    position: absolute; inset: 0;
+    transform: scaleX(-1);
+  }
+  #preview {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    filter: brightness(0.62) contrast(0.92) saturate(0.85);
+  }
+  #preview-overlay {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+
+  /* Tiny label/indicator below preview */
+  .preview-label {
+    position: absolute;
+    left: 12px; bottom: 10px;
+    z-index: 2;
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 500;
+    font-size: 9px;
+    letter-spacing: 0.42em;
+    text-transform: uppercase;
+    color: var(--cream);
+    opacity: 0.55;
+    text-indent: 0.42em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .preview-label::before {
+    content: '';
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 0 6px var(--gold);
+    transform: translateY(-1px);
+  }
+  .preview-frame.tracking .preview-label::before {
+    animation: livePulse 1.6s ease-in-out infinite;
+  }
+  @keyframes livePulse {
+    0%, 100% { opacity: 1; transform: translateY(-1px) scale(1); }
+    50% { opacity: 0.5; transform: translateY(-1px) scale(0.85); }
+  }
 
   /* Subtle screen-edge vignette to add depth */
   .vignette {
@@ -575,7 +633,13 @@
 
 <canvas id="three-canvas"></canvas>
 <video id="video" playsinline muted autoplay></video>
-<video id="preview" playsinline muted autoplay></video>
+<div id="preview-frame" class="preview-frame">
+  <div class="preview-mirror">
+    <video id="preview" playsinline muted autoplay></video>
+    <canvas id="preview-overlay"></canvas>
+  </div>
+  <div class="preview-label">tracking</div>
+</div>
 <div class="vignette"></div>
 <div class="grain"></div>
 
@@ -1033,6 +1097,84 @@ function isOpenHand(lms) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+//  Hand tracking overlay (drawn on top of camera preview)
+// ═══════════════════════════════════════════════════════════════════
+
+const HAND_CONNECTIONS = [
+  // Thumb
+  [0, 1], [1, 2], [2, 3], [3, 4],
+  // Index
+  [0, 5], [5, 6], [6, 7], [7, 8],
+  // Middle
+  [5, 9], [9, 10], [10, 11], [11, 12],
+  // Ring
+  [9, 13], [13, 14], [14, 15], [15, 16],
+  // Pinky
+  [13, 17], [17, 18], [18, 19], [19, 20],
+  // Palm
+  [0, 17],
+];
+const FINGERTIPS = new Set([4, 8, 12, 16, 20]);
+
+const overlayCanvas = document.getElementById('preview-overlay');
+const overlayCtx = overlayCanvas.getContext('2d');
+let overlayDPR = 1;
+
+function ensureOverlaySize() {
+  const rect = overlayCanvas.getBoundingClientRect();
+  if (rect.width === 0) return false;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const needW = Math.round(rect.width * dpr);
+  const needH = Math.round(rect.height * dpr);
+  if (overlayCanvas.width !== needW || overlayCanvas.height !== needH) {
+    overlayCanvas.width = needW;
+    overlayCanvas.height = needH;
+    overlayDPR = dpr;
+  }
+  return true;
+}
+
+function drawHandOverlay() {
+  if (!ensureOverlaySize()) return;
+  const W = overlayCanvas.width;
+  const H = overlayCanvas.height;
+  overlayCtx.clearRect(0, 0, W, H);
+
+  const frame = document.getElementById('preview-frame');
+  const hasHands = handResults && handResults.landmarks && handResults.landmarks.length > 0;
+  frame.classList.toggle('tracking', hasHands);
+  if (!hasHands) return;
+
+  for (const lms of handResults.landmarks) {
+    // Connection lines — gold, with soft glow
+    overlayCtx.strokeStyle = 'rgba(245, 210, 154, 0.85)';
+    overlayCtx.lineWidth = 1.6 * overlayDPR;
+    overlayCtx.lineCap = 'round';
+    overlayCtx.shadowColor = 'rgba(240, 200, 137, 0.55)';
+    overlayCtx.shadowBlur = 8 * overlayDPR;
+    overlayCtx.beginPath();
+    for (const [a, b] of HAND_CONNECTIONS) {
+      overlayCtx.moveTo(lms[a].x * W, lms[a].y * H);
+      overlayCtx.lineTo(lms[b].x * W, lms[b].y * H);
+    }
+    overlayCtx.stroke();
+
+    // Landmarks — cream dots, fingertips and wrist slightly larger
+    overlayCtx.shadowBlur = 6 * overlayDPR;
+    overlayCtx.shadowColor = 'rgba(255, 245, 227, 0.7)';
+    for (let i = 0; i < lms.length; i++) {
+      const key = (i === 0) || FINGERTIPS.has(i);
+      const r = (key ? 3.0 : 1.6) * overlayDPR;
+      overlayCtx.fillStyle = key ? 'rgba(255, 245, 227, 1.0)' : 'rgba(255, 245, 227, 0.85)';
+      overlayCtx.beginPath();
+      overlayCtx.arc(lms[i].x * W, lms[i].y * H, r, 0, Math.PI * 2);
+      overlayCtx.fill();
+    }
+    overlayCtx.shadowBlur = 0;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
 //  Stage state machine
 // ═══════════════════════════════════════════════════════════════════
 
@@ -1103,6 +1245,7 @@ function setStage(next) {
 
     case Stage.QUESTION:
       document.getElementById('stage-heart').style.display = 'none';
+      document.getElementById('preview-frame').classList.remove('visible');
       document.getElementById('q-name').textContent = CONFIG.herName + ',';
       document.getElementById('q-ask').innerHTML = CONFIG.question.replace(/\n/g, '<br/>');
       document.getElementById('stage-question').classList.add('show');
@@ -1134,7 +1277,7 @@ document.getElementById('btn-camera').addEventListener('click', async () => {
     await startCamera();
     await initMediaPipe();
     loading.classList.add('hide');
-    preview.classList.add('visible');
+    document.getElementById('preview-frame').classList.add('visible');
     setStage(Stage.CALIBRATE);
   } catch (err) {
     console.error(err);
@@ -1414,6 +1557,7 @@ function loop() {
     lastVideoTime = video.currentTime;
     try { handResults = handLandmarker.detectForVideo(video, now); } catch (e) {}
     updateHandsWorld();
+    drawHandOverlay();
   }
 
   switch (stage) {
