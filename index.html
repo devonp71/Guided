@@ -748,7 +748,7 @@
 
 <!-- Stage 4: Heart -->
 <div id="stage-heart" style="display:none">
-  <div id="hint-heart" class="hint show">hands together</div>
+  <div id="hint-heart" class="hint show">open your hand</div>
 </div>
 
 <!-- Stage 5: Question -->
@@ -758,7 +758,7 @@
     <div class="the-ask" id="q-ask"></div>
   </div>
   <div class="answer-zone">
-    <div class="answer-hint">open both hands</div>
+    <div class="answer-hint">keep your hand open</div>
     <div class="answer-progress"><div class="answer-fill" id="yes-fill"></div></div>
   </div>
 </div>
@@ -807,7 +807,7 @@ const CONFIG = {
   ],
 
   // Tunables
-  particleCount: 5200,
+  particleCount: 3000,
   pinchThreshold: 0.45,
   handsTogetherThreshold: 1.6,
   heartHoldFrames: 90,          // ~1.5s @ 60fps
@@ -899,17 +899,16 @@ function seedAmbient() {
     else if (depthRoll < 0.85) z = -1.0 + Math.random() * 1.5;   // mid
     else                       z =  0.5 + Math.random() * 1.2;   // near
 
-    // Position with center density falloff
+    // Position with center density falloff so text stays readable
     let x, y;
     let attempt = 0;
     do {
       x = (Math.random() - 0.5) * WW * 1.35;
       y = (Math.random() - 0.5) * HH * 1.20;
       attempt++;
-      // Reject ~50% of particles that land in the central "text zone" (textually quiet zone)
-      const inCenter = Math.abs(x) < WW * 0.32 && Math.abs(y) < HH * 0.22;
-      if (!inCenter || Math.random() < 0.45) break;
-    } while (attempt < 4);
+      const inCenter = Math.abs(x) < WW * 0.36 && Math.abs(y) < HH * 0.26;
+      if (!inCenter || Math.random() < 0.22) break;
+    } while (attempt < 5);
 
     positions[i*3+0] = x;
     positions[i*3+1] = y;
@@ -994,8 +993,8 @@ const particleMat = new THREE.ShaderMaterial({
     void main() {
       if (vAlive < 0.5) discard;
       vec4 tex = texture2D(uTex, gl_PointCoord);
-      // Softer additive output
-      gl_FragColor = vec4(vColor * tex.rgb * 0.95, tex.a);
+      // Softer additive output — particles recede behind content
+      gl_FragColor = vec4(vColor * tex.rgb * 0.78, tex.a);
     }
   `,
 });
@@ -1206,6 +1205,7 @@ const state = {
   messageStartedAt: 0,
   heartHoldFrames: 0,
   heartScaleCurrent: 0.0,
+  heartCenter: null,           // smoothed palm location for single-hand heart
   questionShownAt: 0,
   yesHoldFrames: 0,
   burstStartedAt: -1,
@@ -1256,6 +1256,8 @@ function setStage(next) {
       document.getElementById('progress').classList.remove('show');
       document.getElementById('message-reveal').classList.remove('show');
       document.getElementById('stage-heart').style.display = 'block';
+      state.heartCenter = null;
+      state.heartScaleCurrent = 0.0;
       reviveAllParticles();
       reseedAmbientTargets();
       break;
@@ -1510,20 +1512,42 @@ function advanceMessage() {
   renderTicks();
 }
 
+// Stable palm-center estimate: average of wrist and the four MCP knuckles
+function getPalmCenter(hand) {
+  const c = new THREE.Vector3();
+  for (const i of [0, 5, 9, 13, 17]) c.add(hand.worldLms[i]);
+  return c.multiplyScalar(1/5);
+}
+
 function logicHeart() {
-  if (hands.length < 2) return;
-  const w1 = hands[0].worldLms[0];
-  const w2 = hands[1].worldLms[0];
-  const mid = new THREE.Vector3((w1.x+w2.x)/2, (w1.y+w2.y)/2, (w1.z+w2.z)/2);
-  const sep = w1.distanceTo(w2);
+  if (hands.length < 1) {
+    // No hand visible — gentle decay so it doesn't lock once almost done
+    state.heartHoldFrames = Math.max(0, state.heartHoldFrames - 1);
+    return;
+  }
+  const hand = hands[0];
 
-  const targetScale = Math.max(0.15, 1.4 - sep * 0.4);
+  if (!isOpenHand(hand.lms)) {
+    // Hand present but not open — slow decay, no heart targets
+    state.heartHoldFrames = Math.max(0, state.heartHoldFrames - 1);
+    return;
+  }
+
+  // Place the heart above her palm (toward her fingers), following hand orientation
+  const palm = getPalmCenter(hand);
+  const palmUp = hand.worldLms[9].clone().sub(hand.worldLms[0]).normalize();
+  const targetCenter = palm.add(palmUp.multiplyScalar(0.55));
+
+  // Smooth the heart center to absorb tracking jitter
+  if (!state.heartCenter) state.heartCenter = targetCenter.clone();
+  state.heartCenter.lerp(targetCenter, 0.14);
+
+  // Heart grows from nothing to full size
+  const targetScale = 0.85;
   state.heartScaleCurrent += (targetScale - state.heartScaleCurrent) * 0.08;
-  setHeartTargets(mid, state.heartScaleCurrent);
+  setHeartTargets(state.heartCenter, state.heartScaleCurrent);
 
-  if (sep < CONFIG.handsTogetherThreshold) state.heartHoldFrames++;
-  else state.heartHoldFrames = Math.max(0, state.heartHoldFrames - 1);
-
+  state.heartHoldFrames++;
   if (state.heartHoldFrames > CONFIG.heartHoldFrames) {
     setStage(Stage.QUESTION);
     state.heartHoldFrames = -9999;
@@ -1531,21 +1555,29 @@ function logicHeart() {
 }
 
 function logicQuestion() {
-  const t = (performance.now() - state.questionShownAt) / 1000;
+  const elapsedMs = performance.now() - state.questionShownAt;
+  const t = elapsedMs / 1000;
+
+  // Heart drifts to center-screen and breathes there
   const breath = 0.85 + 0.08 * Math.sin(t * 1.8);
   const center = new THREE.Vector3(0, -0.6, 0);
   setHeartTargets(center, 1.1 * breath);
 
-  let bothOpen = false;
-  if (hands.length >= 2) {
-    bothOpen = isOpenHand(hands[0].lms) && isOpenHand(hands[1].lms);
+  // Reading grace period — let her actually read the question first
+  const readingGraceMs = 4200;
+  const fill = document.getElementById('yes-fill');
+  if (elapsedMs < readingGraceMs) {
+    if (fill) fill.style.width = '0%';
+    return;
   }
-  if (bothOpen) state.yesHoldFrames++;
+
+  // Yes detection — single open hand sustained
+  const oneOpen = hands.length >= 1 && isOpenHand(hands[0].lms);
+  if (oneOpen) state.yesHoldFrames++;
   else state.yesHoldFrames = Math.max(0, state.yesHoldFrames - 1);
 
-  // Drive the visual progress fill so she can see "yes" being detected
+  // Drive the visual fill so she can see "yes" being detected
   const pct = Math.min(100, (state.yesHoldFrames / CONFIG.yesHoldFrames) * 100);
-  const fill = document.getElementById('yes-fill');
   if (fill) fill.style.width = pct + '%';
 
   if (state.yesHoldFrames > CONFIG.yesHoldFrames) {
