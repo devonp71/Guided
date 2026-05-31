@@ -431,6 +431,69 @@
     opacity: 0.55;
   }
 
+  /* ────────── Inventory tray (collected puzzle pieces) ────────── */
+  .inventory {
+    position: fixed;
+    top: calc(var(--safe-top) + 18px);
+    left: 16px;
+    z-index: 6;
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 900ms ease;
+  }
+  .inventory.show { opacity: 1; }
+  .inv-slot {
+    width: 22px; height: 28px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 245, 227, 0.18);
+    background: rgba(245, 237, 224, 0.03);
+    transition: all 700ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .inv-slot.filled {
+    border-color: var(--gold);
+    background: rgba(212, 168, 102, 0.18);
+    box-shadow: 0 0 10px var(--gold), 0 0 22px rgba(240, 200, 137, 0.4);
+  }
+
+  /* ────────── Assembly lead-in line ────────── */
+  .assembly-leadin {
+    position: fixed;
+    left: 50%;
+    top: 28%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    width: min(82%, 460px);
+    text-align: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-style: italic;
+    font-size: clamp(22px, 5.4vw, 30px);
+    line-height: 1.5;
+    color: var(--cream);
+    text-shadow: 0 0 24px rgba(245, 237, 224, 0.10);
+    opacity: 0;
+    transition: opacity 1800ms cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+  }
+  .assembly-leadin.show { opacity: 0.92; }
+
+  /* ────────── Debug HUD ────────── */
+  .debug-hud {
+    position: fixed;
+    left: 10px; bottom: 10px;
+    z-index: 20;
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 10px;
+    line-height: 1.5;
+    color: rgba(245, 237, 224, 0.55);
+    background: rgba(0, 0, 0, 0.45);
+    padding: 6px 9px;
+    border-radius: 6px;
+    white-space: pre;
+    pointer-events: none;
+  }
+
   /* ────────── Question stage ────────── */
   .question-stage {
     position: fixed; inset: 0;
@@ -668,10 +731,10 @@
   <div class="panel">
     <div class="zone-top"></div>
     <div class="zone-main halo">
-      <h1 class="reveal reveal-1 hero">i made you<br/>a thing.</h1>
+      <h1 class="reveal reveal-1 hero" id="welcome-line1">so i made you<br/>a thing</h1>
       <div class="reveal reveal-2 rule"></div>
-      <p class="reveal reveal-3 body-whisper">
-        it'll take three minutes.<br/>
+      <p class="reveal reveal-3 body-whisper" id="welcome-sub">
+        it'll take about ten minutes.<br/>
         you'll need your hands.
       </p>
     </div>
@@ -737,18 +800,22 @@
   </div>
 </div>
 
-<!-- Stage 3: Awakening -->
-<div id="stage-awakening" style="display:none">
-  <div id="hint-awakening" class="hint">pinch to skip</div>
-  <div id="message-reveal" class="message-reveal">
-    <div class="quote" id="message-text"></div>
-  </div>
-  <div id="progress" class="progress"></div>
+<!-- Centered caption (intro + rest beats) — reused across stages -->
+<div id="message-reveal" class="message-reveal">
+  <div class="quote" id="message-text"></div>
 </div>
 
-<!-- Stage 4: Heart -->
-<div id="stage-heart" style="display:none">
-  <div id="hint-heart" class="hint show">open your hand</div>
+<!-- Puzzle HUD: hint, stage progress ticks, collected-piece inventory -->
+<div id="stage-puzzle" style="display:none">
+  <div id="puzzle-hint" class="hint"></div>
+  <div id="progress" class="progress"></div>
+  <div id="inventory" class="inventory"></div>
+</div>
+
+<!-- Final assembly + reveal lead-in -->
+<div id="stage-assembly" style="display:none">
+  <div id="assembly-hint" class="hint"></div>
+  <div id="assembly-leadin" class="assembly-leadin"></div>
 </div>
 
 <!-- Stage 5: Question -->
@@ -783,37 +850,78 @@ import { HandLandmarker, FilesetResolver } from 'https://cdn.jsdelivr.net/npm/@m
 
 // ═══════════════════════════════════════════════════════════════════
 //  CONFIGURATION — customize this for her ♥
+//  Fields marked [OPTIONAL — personalize] are safe to edit freely.
 // ═══════════════════════════════════════════════════════════════════
 
 const CONFIG = {
-  // Her name (displayed quietly above the question — replace this)
-  herName: "[her name]",
+  // ── Identity / copy ───────────────────────────────────────────────
+  herName: "[her name]",                            // [OPTIONAL — personalize]
 
-  // The big question — short and direct to land after the buildup
-  question: "be my girlfriend?",
+  // Opening start screen
+  opening: {
+    line1: "so i made you a thing",
+    sub: "it'll take about ten minutes.\nyou'll need your hands.",
+  },
 
-  // Closing line after she says yes
-  closing: "okay. that's that.",
-
-  // Reflection messages — auto-advance during the Awakening stage.
-  // These reference the dynamic between you two without naming it.
-  // Each message displays for ~6 seconds. A pinch skips ahead.
-  messages: [
-    "okay. quick speech.",
-    "you notice things i'd never think to mention.",
-    "i live in my head. you keep pulling me out of it.",
-    "we shouldn't fit this well. we do anyway.",
-    "this is the longest text you'll ever get from me.",
+  // Intro beat (shown once before the first puzzle)
+  intro: [
+    "okay. let's build something.",
+    "pinch to pick things up. let go to drop.",
   ],
 
-  // Tunables
+  // Hands-down rest captions, one shown between each puzzle stage
+  restCaptions: [
+    "shake your hands out.",
+    "nice. keep going.",
+    "good. one more.",
+    "almost there.",
+  ],
+
+  // The disguised ask — revealed only when the final puzzle is assembled.
+  leadIn: "you're already my girl, but …",     // [OPTIONAL — personalize]
+  ask:    "make it official?",                      // [OPTIONAL — personalize] the question itself
+  // `question` is kept as an alias of `ask` so the reused answer/celebration
+  // landing needs no logic change. Keep these two in sync.
+  question: "make it official?",
+  closing: "okay. that's that.",                    // [OPTIONAL — personalize] after she says yes
+
+  // ── Pacing / forgiveness ──────────────────────────────────────────
+  restMs: 4500,           // hands-down rest beat duration (tap to skip)
+  graceMs: 1200,          // ignore input briefly after a stage starts
+  hintDelayMs: 6000,      // when the gold hint fades in (~5–7s)
+  autoSolveMs: 16000,     // never-stuck: gently auto-complete a stage after this
+  holdFrames: 60,         // generic aligned/placed confirm hold (~1s @ 60fps)
+
+  // ── Interaction thresholds (forgiving) ────────────────────────────
+  pinchGrab: 0.45,        // grab when pinchRatio < this
+  pinchRelease: 0.60,     // release when pinchRatio > this (hysteresis)
+  grabRadiusWorld: 2.0,   // how close a pinch must be to latch an object
+  grabLerp: 0.4,          // held-object follow smoothing (higher = snappier)
+  snapTolWorld: 1.6,      // snap-to-slot tolerance (generous)
+  sliceSpeed: 0.14,       // world-x speed of a swipe that counts as a cut
+  rotateTolRad: 0.32,     // ~18° alignment tolerance for the dial
+
+  // ── Per-stage content (generic; works out of the box) ─────────────
+  stack:    { count: 3, hint: "stack the blocks." },
+  cut:      { hint: "swipe across to cut it open." },
+  rotate:   { hint: "turn your hand to line up the mark." },
+  place:    { count: 3, hint: "drop each shape into its socket." },
+  assembly: { hint: "fit the pieces into the frame." },
+  pieceCount: 4,          // number of puzzle stages = pieces collected
+
+  // ── Engine ────────────────────────────────────────────────────────
   particleCount: 3000,
   pinchThreshold: 0.45,
-  handsTogetherThreshold: 1.6,
-  heartHoldFrames: 90,          // ~1.5s @ 60fps
-  yesHoldFrames: 60,            // ~1s of confident open-hand detection
-  messageDwellMs: 5500,         // how long each reflection message stays on screen
+  yesHoldFrames: 60,      // ~1s of confident open-hand "yes" detection
+
+  // ── Debug (also auto-enabled by ?debug=1) ─────────────────────────
+  debug: false,
 };
+
+// Enable debug aids (mock hands + keyboard jumps + HUD) via ?debug=1
+try {
+  if (new URLSearchParams(location.search).get('debug') === '1') CONFIG.debug = true;
+} catch (e) {}
 
 // ═══════════════════════════════════════════════════════════════════
 //  Three.js scene
@@ -1003,6 +1111,209 @@ const points = new THREE.Points(particleGeom, particleMat);
 scene.add(points);
 
 // ═══════════════════════════════════════════════════════════════════
+//  Tiny tween utility (no external deps)
+// ═══════════════════════════════════════════════════════════════════
+
+const easeOutCubic = (k) => 1 - Math.pow(1 - k, 3);
+const easeInCubic  = (k) => k * k * k;
+const easeInOutCubic = (k) => k < 0.5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3) / 2;
+
+const tweens = [];
+function tween({ dur = 300, ease = easeOutCubic, onUpdate, onDone }) {
+  const t = { start: performance.now(), dur, ease, onUpdate, onDone, done: false };
+  tweens.push(t);
+  return t;
+}
+function tweenVec3(vec, to, dur = 300, ease = easeOutCubic, onDone) {
+  const from = vec.clone();
+  return tween({ dur, ease, onUpdate: (e) => vec.lerpVectors(from, to, e), onDone });
+}
+function updateTweens(now) {
+  for (let i = tweens.length - 1; i >= 0; i--) {
+    const t = tweens[i];
+    let k = (now - t.start) / t.dur;
+    if (k > 1) k = 1;
+    t.onUpdate && t.onUpdate(t.ease(k));
+    if (k >= 1 && !t.done) { t.done = true; tweens.splice(i, 1); t.onDone && t.onDone(); }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  3D puzzle object layer (meshes live on the WORK_Z plane)
+//  No lights: MeshBasic cream faces + gold edge lines to match the
+//  glowy dark/cream/gold aesthetic and stay cheap alongside particles.
+// ═══════════════════════════════════════════════════════════════════
+
+const WORK_Z = 0;                       // working plane = particle plane (handToWorld x/y exact here)
+const COL_CREAM = 0xf5ede0;
+const COL_GOLD  = 0xd4a866;
+
+const puzzleGroup = new THREE.Group();
+scene.add(puzzleGroup);
+
+// A solid = faint translucent face + bright gold wireframe edges, wrapped in
+// a Group so callers position/rotate the whole object and we can fade it out.
+function makeSolid(geom, opts = {}) {
+  const g = new THREE.Group();
+  const faceMat = new THREE.MeshBasicMaterial({
+    color: opts.color ?? COL_CREAM,
+    transparent: true,
+    opacity: opts.opacity ?? 0.16,
+    depthWrite: true,
+  });
+  g.add(new THREE.Mesh(geom, faceMat));
+  const edgeMat = new THREE.LineBasicMaterial({
+    color: opts.edgeColor ?? COL_GOLD,
+    transparent: true,
+    opacity: opts.edgeOpacity ?? 0.92,
+  });
+  g.add(new THREE.LineSegments(new THREE.EdgesGeometry(geom), edgeMat));
+  g.userData.faceMat = faceMat;
+  g.userData.edgeMat = edgeMat;
+  g.userData.baseGeom = geom;
+  return g;
+}
+
+// Fade a solid's face + edges to a target opacity multiplier (1 = as authored).
+function setSolidOpacity(solid, mult) {
+  const f = solid.userData.faceMat, e = solid.userData.edgeMat;
+  if (f) f.opacity = (f.userData?.base ?? 0.16) * mult;
+  if (e) e.opacity = (e.userData?.base ?? 0.92) * mult;
+}
+function tagBaseOpacity(solid) {
+  if (solid.userData.faceMat) solid.userData.faceMat.userData = { base: solid.userData.faceMat.opacity };
+  if (solid.userData.edgeMat) solid.userData.edgeMat.userData = { base: solid.userData.edgeMat.opacity };
+}
+
+function makeBlock(w = 1.3, h = 0.8, d = 1.3, opts = {}) {
+  const s = makeSolid(new THREE.BoxGeometry(w, h, d), opts);
+  s.userData.kind = 'block';
+  tagBaseOpacity(s);
+  return s;
+}
+
+// A short cylinder with a gold tick on its rim — used by the rotate stage.
+function makeDial(radius = 1.4, depth = 0.5) {
+  const s = makeSolid(new THREE.CylinderGeometry(radius, radius, depth, 48), { opacity: 0.12 });
+  s.children[0].rotation.x = Math.PI / 2; // face the camera
+  s.children[1].rotation.x = Math.PI / 2;
+  const mark = new THREE.Mesh(
+    new THREE.BoxGeometry(0.12, radius * 0.5, depth + 0.06),
+    new THREE.MeshBasicMaterial({ color: COL_GOLD, transparent: true, opacity: 0.95 })
+  );
+  mark.position.y = radius * 0.72;
+  s.add(mark);
+  s.userData.kind = 'dial';
+  tagBaseOpacity(s);
+  return s;
+}
+
+// Distinct silhouettes for the "place into socket" stage.
+function makeShapeMesh(kind, size = 1.0) {
+  let geom;
+  if (kind === 'cube')      geom = new THREE.BoxGeometry(size, size, size);
+  else if (kind === 'pyr')  geom = new THREE.ConeGeometry(size * 0.7, size, 4);
+  else                      geom = new THREE.CylinderGeometry(size * 0.6, size * 0.6, size, 32);
+  const s = makeSolid(geom, { opacity: 0.18 });
+  s.userData.kind = 'shape';
+  s.userData.shape = kind;
+  tagBaseOpacity(s);
+  return s;
+}
+
+// A thin socket outline (gold ring/box) that accepts a matching shape.
+function makeSocket(kind, size = 1.0) {
+  let geom;
+  if (kind === 'cube')      geom = new THREE.BoxGeometry(size * 1.25, size * 1.25, 0.2);
+  else if (kind === 'pyr')  geom = new THREE.ConeGeometry(size * 0.95, 0.2, 4);
+  else                      geom = new THREE.CylinderGeometry(size * 0.85, size * 0.85, 0.2, 32);
+  const s = makeSolid(geom, { opacity: 0.05, edgeOpacity: 0.4 });
+  if (kind !== 'cube') { s.children[0].rotation.x = Math.PI / 2; s.children[1].rotation.x = Math.PI / 2; }
+  s.userData.kind = 'socket';
+  s.userData.shape = kind;
+  tagBaseOpacity(s);
+  return s;
+}
+
+// Two half-boxes that start fused; the cut stage splits them apart to reveal
+// the piece hidden inside. Returns { group, left, right }.
+function makeHalfPair(w = 2.0, h = 2.0, d = 1.4) {
+  const group = new THREE.Group();
+  const left  = makeSolid(new THREE.BoxGeometry(w / 2, h, d), { opacity: 0.2 });
+  const right = makeSolid(new THREE.BoxGeometry(w / 2, h, d), { opacity: 0.2 });
+  left.position.x  = -w / 4;
+  right.position.x =  w / 4;
+  tagBaseOpacity(left); tagBaseOpacity(right);
+  group.add(left, right);
+  group.userData.kind = 'halfpair';
+  return { group, left, right };
+}
+
+// Draw a word onto a CanvasTexture so an assembled tile can reveal it.
+function makeWordTexture(word) {
+  const W = 512, H = 256;
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#f5ede0';
+  ctx.font = "600 120px 'Cormorant Garamond', serif";
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(word, W / 2, H / 2 + 8);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+// A flat puzzle-piece tile. Abstract (blank gold-edged) while collected;
+// its word face is revealed only when seated into the assembly frame.
+function makePiece(index, word) {
+  const w = 1.9, h = 1.25;
+  const s = makeSolid(new THREE.BoxGeometry(w, h, 0.18), { opacity: 0.16 });
+  s.userData.kind = 'piece';
+  s.userData.index = index;
+  s.userData.word = word || '';
+  tagBaseOpacity(s);
+
+  // Hidden word face (revealed on assembly).
+  const wordMat = new THREE.MeshBasicMaterial({
+    map: makeWordTexture(word || ''),
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+  });
+  const wordPlane = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.92, h * 0.92), wordMat);
+  wordPlane.position.z = 0.1;
+  s.add(wordPlane);
+  s.userData.wordMat = wordMat;
+  return s;
+}
+
+function revealPieceWord(piece, dur = 700) {
+  const mat = piece.userData.wordMat;
+  if (!mat) return;
+  tween({ dur, onUpdate: (e) => { mat.opacity = e; } });
+}
+
+// Recursively dispose a group's geometries/materials and detach it.
+function disposeObject3D(obj) {
+  obj.traverse((o) => {
+    if (o.geometry) o.geometry.dispose();
+    if (o.material) {
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      for (const m of mats) { if (m.map) m.map.dispose(); m.dispose(); }
+    }
+  });
+  if (obj.parent) obj.parent.remove(obj);
+}
+function clearPuzzleGroup() {
+  for (let i = puzzleGroup.children.length - 1; i >= 0; i--) {
+    disposeObject3D(puzzleGroup.children[i]);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
 //  Heart geometry
 // ═══════════════════════════════════════════════════════════════════
 
@@ -1109,6 +1420,109 @@ function isOpenHand(lms) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+//  3D interaction systems (pinch-grab, snap, slice, rotate)
+//  Depth is unreliable from one camera, so we work on the WORK_Z plane:
+//  hand x/y → world, z forced to WORK_Z. Forgiving by design.
+// ═══════════════════════════════════════════════════════════════════
+
+// A grabbable wraps a mesh + bookkeeping. Slots/snapping are stage-driven.
+function makeGrabbable(mesh) {
+  return { mesh, grabOffset: new THREE.Vector3(), locked: false, settled: false };
+}
+
+// World point of the pinch (thumb-tip 4 / index-tip 8 midpoint), on WORK_Z.
+function pinchMidWorld(hand) {
+  const lms = hand.lms;
+  const mid = { x: (lms[4].x + lms[8].x) / 2, y: (lms[4].y + lms[8].y) / 2, z: 0 };
+  const w = handToWorld(mid);
+  w.z = WORK_Z;
+  return w;
+}
+
+// Generic pinch grab with hysteresis (grab <pinchGrab, release >pinchRelease),
+// nearest-in-plane pick, lerp follow. onRelease(grabbable, pinchPoint) lets the
+// stage decide snapping. Returns the live pinch ratio (for the debug HUD).
+function updateGrab(ctx, hand, grabbables, onRelease) {
+  const lms = hand.lms;
+  const ratio = pinchRatio(lms);
+  const p = ctx.pinch;
+  const mid = pinchMidWorld(hand);
+  p.lastRatio = ratio;
+  p.justGrabbed = false;
+
+  if (!p.active && ratio < CONFIG.pinchGrab) {
+    p.active = true;
+    let best = null, bestD = CONFIG.grabRadiusWorld;
+    for (const g of grabbables) {
+      if (g.locked) continue;
+      const d = Math.hypot(g.mesh.position.x - mid.x, g.mesh.position.y - mid.y);
+      if (d < bestD) { bestD = d; best = g; }
+    }
+    if (best) {
+      ctx.grabbed = best;
+      p.justGrabbed = true;
+      best.grabOffset.set(best.mesh.position.x - mid.x, best.mesh.position.y - mid.y, 0);
+    }
+  } else if (p.active && ratio > CONFIG.pinchRelease) {
+    p.active = false;
+    if (ctx.grabbed) { const g = ctx.grabbed; ctx.grabbed = null; onRelease && onRelease(g, mid); }
+  }
+
+  if (ctx.grabbed) {
+    const g = ctx.grabbed;
+    const tx = mid.x + g.grabOffset.x;
+    const ty = mid.y + g.grabOffset.y;
+    g.mesh.position.x += (tx - g.mesh.position.x) * CONFIG.grabLerp;
+    g.mesh.position.y += (ty - g.mesh.position.y) * CONFIG.grabLerp;
+    g.mesh.position.z = WORK_Z;
+  }
+  return ratio;
+}
+
+// Snap a grabbable's mesh to a target position with a short ease.
+function snapTo(grabbable, pos, dur = 240, onDone) {
+  tweenVec3(grabbable.mesh.position, pos.clone().setZ(WORK_Z), dur, easeOutCubic, onDone);
+}
+
+// Slice detector: a decisive lateral swipe of the index tip across an object's
+// center-x. Forgiving — any fast crossing counts; debounced to one cut.
+function makeSlicer() { return { prevX: null, cooldownUntil: 0 }; }
+function updateSlicer(slicer, hand, centerX, now) {
+  if (now < slicer.cooldownUntil) return false;
+  const lms = hand.lms;
+  if (!(fingerExtended(lms, 5, 6, 8) || isOpenHand(lms))) { slicer.prevX = null; return false; }
+  const x = handToWorld(lms[8]).x;
+  if (slicer.prevX === null) { slicer.prevX = x; return false; }
+  const vx = x - slicer.prevX;
+  const crossed = (slicer.prevX - centerX) * (x - centerX) <= 0;
+  const fast = Math.abs(vx) > CONFIG.sliceSpeed;
+  slicer.prevX = x;
+  if (crossed && fast) { slicer.cooldownUntil = now + 1200; return true; }
+  return false;
+}
+
+// Hand roll angle from the wrist(0)→middle-MCP(9) vector. Upright hand ≈ +PI/2.
+function handRoll(hand) {
+  const w = hand.worldLms;
+  return Math.atan2(w[9].y - w[0].y, w[9].x - w[0].x);
+}
+
+// Non-destructive particle "pop" outward from a point (sparkle accent).
+function sparkleAt(center, strength = 0.14) {
+  for (let i = 0; i < N; i++) {
+    if (alive[i] < 0.5) continue;
+    const dx = positions[i*3] - center.x, dy = positions[i*3+1] - center.y, dz = positions[i*3+2] - center.z;
+    const d2 = dx*dx + dy*dy + dz*dz;
+    if (d2 < 4.0) {
+      const d = Math.sqrt(d2) + 1e-3;
+      velocities[i*3]   += (dx / d) * strength;
+      velocities[i*3+1] += (dy / d) * strength;
+      velocities[i*3+2] += (dz / d) * strength;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
 //  Hand tracking overlay (drawn on top of camera preview)
 // ═══════════════════════════════════════════════════════════════════
 
@@ -1187,30 +1601,32 @@ function drawHandOverlay() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-//  Stage state machine
+//  Stage sequencer / registry
+//  `stage` is a coarse phase for the pre-sequencer screens + the reused
+//  question/celebration landing. The puzzle stages are data-driven
+//  descriptors in SEQUENCE, dispatched via `current`.
 // ═══════════════════════════════════════════════════════════════════
 
-const Stage = {
-  WELCOME: 'welcome', SETUP: 'setup', CALIBRATE: 'calibrate',
-  AWAKENING: 'awakening', HEART: 'heart', QUESTION: 'question',
-  CELEBRATION: 'celebration',
+let stage = 'welcome';          // 'welcome'|'setup'|'error'|'calibrate'|'puzzle'|'question'|'celebration'
+let physicsMode = 'ambient';    // 'ambient'|'gather'|'burst' — read by integrateParticles
+let current = null;             // active SEQUENCE descriptor (null during pre/landing)
+let calibrateHoldFrames = 0;
+
+// Shared per-run context (replaces the old `state` bag).
+// (Note: the global `hands[]` array is declared lower in the file and used
+//  directly by stage code; we don't capture it here to avoid a TDZ error.)
+const ctx = {
+  now: 0, dt: 0,
+  stageScratch: {},
+  pieces: [],                   // collected puzzle pieces (count = filled inventory slots)
+  grabbed: null,
+  pinch: { active: false, justGrabbed: false, lastRatio: 1 },
+  stageEnteredAt: 0,
+  // landing scratch (question/celebration), kept simple
+  questionShownAt: 0, yesHoldFrames: 0, burstStartedAt: -1, lastBeat: -1,
 };
 
-let stage = Stage.WELCOME;
-
-const state = {
-  calibrateHoldFrames: 0,
-  pinchActive: false,
-  messageIndex: 0,
-  messageStartedAt: 0,
-  heartHoldFrames: 0,
-  heartScaleCurrent: 0.0,
-  heartCenter: null,           // smoothed palm location for single-hand heart
-  questionShownAt: 0,
-  yesHoldFrames: 0,
-  burstStartedAt: -1,
-  lastBeat: -1,
-};
+let hintTimer = null;
 
 function showStage(id) {
   const el = document.getElementById(id);
@@ -1224,62 +1640,484 @@ function showStage(id) {
 }
 
 function hideOverlayStages() {
-  const ids = ['stage-welcome','stage-setup','stage-calibrate','stage-awakening','stage-error'];
+  const ids = ['stage-welcome','stage-setup','stage-calibrate','stage-error'];
   for (const id of ids) {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   }
 }
 
-function setStage(next) {
-  stage = next;
-  console.log('[stage]', next);
-  hideOverlayStages();
+// ── HUD helpers ────────────────────────────────────────────────────
+const puzzleHintEl = () => document.getElementById('puzzle-hint');
 
-  switch (next) {
-    case Stage.CALIBRATE:
-      showStage('stage-calibrate');
-      break;
-
-    case Stage.AWAKENING:
-      document.getElementById('stage-awakening').style.display = 'block';
-      document.getElementById('hint-awakening').classList.add('show');
-      document.getElementById('progress').classList.add('show');
-      state.messageIndex = 0;
-      state.messageStartedAt = performance.now();
-      showMessage(0);
-      renderTicks();
-      break;
-
-    case Stage.HEART:
-      document.getElementById('hint-awakening').classList.remove('show');
-      document.getElementById('progress').classList.remove('show');
-      document.getElementById('message-reveal').classList.remove('show');
-      document.getElementById('stage-heart').style.display = 'block';
-      state.heartCenter = null;
-      state.heartScaleCurrent = 0.0;
-      reviveAllParticles();
-      reseedAmbientTargets();
-      break;
-
-    case Stage.QUESTION:
-      document.getElementById('stage-heart').style.display = 'none';
-      document.getElementById('preview-frame').classList.remove('visible');
-      document.getElementById('q-name').textContent = CONFIG.herName + ',';
-      document.getElementById('q-ask').innerHTML = CONFIG.question.replace(/\n/g, '<br/>');
-      document.getElementById('stage-question').classList.add('show');
-      state.questionShownAt = performance.now();
-      break;
-
-    case Stage.CELEBRATION:
-      document.getElementById('stage-question').classList.remove('show');
-      document.getElementById('c-sub').textContent = CONFIG.closing;
-      document.getElementById('stage-celebration').classList.add('show');
-      state.burstStartedAt = performance.now();
-      triggerCelebrationBurst();
-      break;
-  }
+function setHint(text, delayMs = CONFIG.hintDelayMs) {
+  const el = puzzleHintEl();
+  if (!el) return;
+  el.classList.remove('show');
+  el.textContent = text || '';
+  if (hintTimer) clearTimeout(hintTimer);
+  if (text) hintTimer = setTimeout(() => el.classList.add('show'), delayMs);
 }
+
+function showCaption(text) {
+  const m = document.getElementById('message-reveal');
+  const t = document.getElementById('message-text');
+  m.classList.remove('show');
+  setTimeout(() => {
+    t.innerHTML = (text || '').replace(/\n/g, '<br/>');
+    m.classList.add('show');
+  }, 300);
+}
+function hideCaption() {
+  document.getElementById('message-reveal').classList.remove('show');
+}
+
+function renderProgress(filled) {
+  const wrap = document.getElementById('progress');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  for (let i = 0; i < CONFIG.pieceCount; i++) {
+    const d = document.createElement('div');
+    d.className = 'tick' + (i < filled ? ' lit' : '');
+    wrap.appendChild(d);
+  }
+  wrap.classList.add('show');
+}
+
+function renderInventory(filled) {
+  const wrap = document.getElementById('inventory');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  for (let i = 0; i < CONFIG.pieceCount; i++) {
+    const d = document.createElement('div');
+    d.className = 'inv-slot' + (i < filled ? ' filled' : '');
+    wrap.appendChild(d);
+  }
+  wrap.classList.add('show');
+}
+
+// A world point near the top-left, where collected pieces fly to.
+function inventoryWorldPoint() {
+  const { w, h } = worldBounds();
+  return new THREE.Vector3(-w * 0.38, h * 0.40, WORK_Z);
+}
+
+// ── Generic "stage solved" → collect a piece → advance ──────────────
+function collectPieceAndAdvance(atPos, caption) {
+  const sc = ctx.stageScratch;
+  if (sc.solved) return;
+  sc.solved = true;
+
+  const filled = ctx.pieces.length + 1;
+  ctx.pieces.push({ index: filled - 1 });
+
+  // A little piece mesh flies to the inventory tray, then the slot lights.
+  const piece = makePiece(filled - 1, '');
+  piece.position.copy(atPos || new THREE.Vector3(0, 0, WORK_Z));
+  puzzleGroup.add(piece);
+  sparkleAt(piece.position, 0.16);
+  tweenVec3(piece.position, inventoryWorldPoint(), 700, easeInOutCubic, () => {
+    renderInventory(filled);
+    renderProgress(filled);
+    disposeObject3D(piece);
+  });
+
+  if (caption) showCaption(caption);
+  setTimeout(() => advanceStage(), 1400);
+}
+
+// ── Hub ─────────────────────────────────────────────────────────────
+let seqIndex = -1;
+
+function gotoStage(desc) {
+  if (current && current.exit) current.exit(ctx);
+  current = desc;
+  ctx.stageScratch = {};
+  ctx.grabbed = null;
+  ctx.pinch.active = false;
+  ctx.stageEnteredAt = performance.now();
+  physicsMode = desc.physics || 'ambient';
+  stage = 'puzzle';
+  console.log('[stage]', desc.id);
+  setHint(desc.hint || '', desc.hintDelayMs ?? CONFIG.hintDelayMs);
+  if (desc.enter) desc.enter(ctx);
+}
+
+function advanceStage() {
+  seqIndex++;
+  if (seqIndex >= SEQUENCE.length) { enterQuestion(); return; }
+  gotoStage(SEQUENCE[seqIndex]);
+}
+
+function startSequencer() {
+  document.getElementById('stage-puzzle').style.display = 'block';
+  seqIndex = -1;
+  advanceStage();
+}
+
+// ── Landing (reused question → celebration) ─────────────────────────
+function enterQuestion() {
+  if (current && current.exit) current.exit(ctx);
+  current = null;
+  clearPuzzleGroup();
+  setHint('');
+  hideCaption();
+  document.getElementById('stage-puzzle').style.display = 'none';
+  document.getElementById('stage-assembly').style.display = 'none';
+  document.getElementById('preview-frame').classList.remove('visible');
+  document.getElementById('q-name').textContent = CONFIG.herName + ',';
+  document.getElementById('q-ask').innerHTML = CONFIG.ask.replace(/\n/g, '<br/>');
+  document.getElementById('stage-question').classList.add('show');
+  physicsMode = 'gather';
+  stage = 'question';
+  reviveAllParticles();
+  ctx.questionShownAt = performance.now();
+  ctx.yesHoldFrames = 0;
+}
+
+function enterCelebration() {
+  document.getElementById('stage-question').classList.remove('show');
+  document.getElementById('c-sub').textContent = CONFIG.closing;
+  document.getElementById('stage-celebration').classList.add('show');
+  physicsMode = 'burst';
+  stage = 'celebration';
+  ctx.burstStartedAt = performance.now();
+  ctx.lastBeat = -1;
+  triggerCelebrationBurst();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  Puzzle stage descriptors
+// ═══════════════════════════════════════════════════════════════════
+
+function autoSolveDue() {
+  return performance.now() - ctx.stageEnteredAt > CONFIG.autoSolveMs;
+}
+function pastGrace() {
+  return performance.now() - ctx.stageEnteredAt > CONFIG.graceMs;
+}
+
+// Intro beat — scene-setter, auto-advances (pinch to skip).
+const introStage = {
+  id: 'intro', kind: 'overlay', physics: 'ambient', hint: '',
+  enter() {
+    document.getElementById('inventory').classList.remove('show');
+    document.getElementById('progress').classList.remove('show');
+    ctx.stageScratch.i = 0;
+    ctx.stageScratch.at = performance.now();
+    showCaption(CONFIG.intro[0]);
+  },
+  update() {
+    applyHandForces(0.06);
+    const sc = ctx.stageScratch;
+    const elapsed = performance.now() - sc.at;
+    let pinch = false;
+    for (const h of hands) if (isPinching(h.lms)) { pinch = true; break; }
+    const advance = elapsed > 4200 || (pinch && elapsed > 700);
+    if (advance) {
+      sc.i++;
+      if (sc.i >= CONFIG.intro.length) { hideCaption(); advanceStage(); return; }
+      sc.at = performance.now();
+      showCaption(CONFIG.intro[sc.i]);
+    }
+  },
+  exit() { hideCaption(); },
+};
+
+// Rest beat — hands-down breather between puzzles.
+function makeRestStage(idx) {
+  return {
+    id: 'rest' + idx, kind: 'rest', physics: 'ambient', hint: '',
+    enter() {
+      const cap = CONFIG.restCaptions[idx % CONFIG.restCaptions.length];
+      showCaption(cap);
+      ctx.stageScratch.at = performance.now();
+      ctx.stageScratch.tap = () => { ctx.stageScratch.tapped = true; };
+      window.addEventListener('pointerdown', ctx.stageScratch.tap);
+    },
+    update() {
+      const sc = ctx.stageScratch;
+      if (sc.tapped || performance.now() - sc.at > CONFIG.restMs) { advanceStage(); }
+    },
+    exit() {
+      hideCaption();
+      if (ctx.stageScratch.tap) window.removeEventListener('pointerdown', ctx.stageScratch.tap);
+    },
+  };
+}
+
+// S1 — Stack: pinch-drag blocks onto a column (order-forgiving snap).
+const stackStage = {
+  id: 'stack', kind: 'puzzle', physics: 'ambient', hint: CONFIG.stack.hint,
+  enter() {
+    clearPuzzleGroup();
+    const sc = ctx.stageScratch;
+    const n = CONFIG.stack.count;
+    const { w } = worldBounds();
+    const colX = 0, baseY = -2.0, bh = 0.85;
+    sc.colX = colX;
+    sc.slots = [];
+    for (let i = 0; i < n; i++) sc.slots.push({ pos: new THREE.Vector3(colX, baseY + i * bh, WORK_Z), filled: false });
+    sc.grabbables = [];
+    for (let i = 0; i < n; i++) {
+      const b = makeBlock(1.3, bh * 0.92, 1.3);
+      b.position.set((i - (n - 1) / 2) * (w * 0.16) - w * 0.18, 1.4 - i * 0.5, WORK_Z);
+      puzzleGroup.add(b);
+      sc.grabbables.push(makeGrabbable(b));
+    }
+    sc.placed = 0;
+    // faint ghost of the finished column
+    const ghost = makeBlock(1.36, bh * n, 1.36, { opacity: 0.04, edgeOpacity: 0.18 });
+    ghost.position.set(colX, baseY + (n - 1) * bh / 2, WORK_Z - 0.2);
+    puzzleGroup.add(ghost);
+  },
+  update() {
+    const sc = ctx.stageScratch;
+    if (sc.solved) return;
+    if (autoSolveDue()) { // never stuck: drop remaining blocks into the column
+      for (const g of sc.grabbables) {
+        if (g.locked) continue;
+        const slot = sc.slots.find((s) => !s.filled);
+        if (slot) { slot.filled = true; g.locked = true; sc.placed++; snapTo(g, slot.pos); }
+      }
+    }
+    if (hands.length >= 1) {
+      updateGrab(ctx, hands[0], sc.grabbables, (g, p) => {
+        if (g.locked) return;
+        if (Math.abs(g.mesh.position.x - sc.colX) < CONFIG.snapTolWorld * 1.6) {
+          const slot = sc.slots.find((s) => !s.filled);
+          if (slot) { slot.filled = true; g.locked = true; sc.placed++; sparkleAt(slot.pos, 0.1); snapTo(g, slot.pos); }
+        }
+      });
+    }
+    if (sc.placed >= CONFIG.stack.count) {
+      collectPieceAndAdvance(sc.slots[sc.slots.length - 1].pos.clone());
+    }
+  },
+  exit() {},
+};
+
+// S2 — Cut: swipe across the sealed object to split it and reveal the piece.
+const cutStage = {
+  id: 'cut', kind: 'puzzle', physics: 'ambient', hint: CONFIG.cut.hint,
+  enter() {
+    clearPuzzleGroup();
+    const sc = ctx.stageScratch;
+    const hp = makeHalfPair(2.4, 2.2, 1.4);
+    hp.group.position.set(0, 0, WORK_Z);
+    puzzleGroup.add(hp.group);
+    sc.halves = hp;
+    sc.slicer = makeSlicer();
+  },
+  update() {
+    const sc = ctx.stageScratch;
+    if (sc.solved) return;
+    let cut = false;
+    if (hands.length >= 1 && pastGrace()) cut = updateSlicer(sc.slicer, hands[0], 0, performance.now());
+    if (cut || autoSolveDue()) {
+      // split the halves apart and fade them out
+      const L = sc.halves.left, R = sc.halves.right;
+      tweenVec3(L.position, new THREE.Vector3(L.position.x - 2.4, -3.5, WORK_Z), 900, easeInCubic);
+      tweenVec3(R.position, new THREE.Vector3(R.position.x + 2.4, -3.5, WORK_Z), 900, easeInCubic);
+      tween({ dur: 700, onUpdate: (e) => { setSolidOpacity(L, 1 - e); setSolidOpacity(R, 1 - e); } });
+      sparkleAt(new THREE.Vector3(0, 0, WORK_Z), 0.18);
+      collectPieceAndAdvance(new THREE.Vector3(0, 0, WORK_Z));
+    }
+  },
+  exit() {},
+};
+
+// S3 — Rotate: turn your hand to bring the dial's mark to the top notch.
+const rotateStage = {
+  id: 'rotate', kind: 'puzzle', physics: 'ambient', hint: CONFIG.rotate.hint,
+  enter() {
+    clearPuzzleGroup();
+    const sc = ctx.stageScratch;
+    const dial = makeDial(1.5, 0.5);
+    dial.position.set(0, 0, WORK_Z);
+    dial.rotation.z = Math.PI * (0.5 + Math.random()); // start misaligned
+    puzzleGroup.add(dial);
+    // static target notch at the top
+    const notch = new THREE.Mesh(
+      new THREE.BoxGeometry(0.16, 0.5, 0.1),
+      new THREE.MeshBasicMaterial({ color: COL_CREAM, transparent: true, opacity: 0.5 })
+    );
+    notch.position.set(0, 1.95, WORK_Z);
+    puzzleGroup.add(notch);
+    sc.dial = dial;
+    sc.hold = 0;
+  },
+  update() {
+    const sc = ctx.stageScratch;
+    if (sc.solved) return;
+    if (hands.length >= 1) {
+      const target = handRoll(hands[0]) - Math.PI / 2;  // upright hand → 0
+      sc.dial.rotation.z += (target - sc.dial.rotation.z) * 0.18;
+    }
+    // angular error to nearest aligned position (mark up = rotation.z ≈ 0)
+    let err = Math.atan2(Math.sin(sc.dial.rotation.z), Math.cos(sc.dial.rotation.z));
+    const aligned = Math.abs(err) < CONFIG.rotateTolRad;
+    sc.dial.userData.edgeMat.opacity = 0.5 + 0.45 * (aligned ? 1 : Math.max(0, 1 - Math.abs(err)));
+    if (aligned && pastGrace()) sc.hold++; else sc.hold = Math.max(0, sc.hold - 1);
+    if (sc.hold > CONFIG.holdFrames || autoSolveDue()) {
+      tween({ dur: 400, onUpdate: (e) => { sc.dial.rotation.z *= (1 - e); } });
+      sparkleAt(new THREE.Vector3(0, 0, WORK_Z), 0.14);
+      collectPieceAndAdvance(new THREE.Vector3(0, 0, WORK_Z));
+    }
+  },
+  exit() {},
+};
+
+// S4 — Place: drag each shape into its matching socket.
+const placeStage = {
+  id: 'place', kind: 'puzzle', physics: 'ambient', hint: CONFIG.place.hint,
+  enter() {
+    clearPuzzleGroup();
+    const sc = ctx.stageScratch;
+    const kinds = ['cube', 'pyr', 'cyl'];
+    const { w } = worldBounds();
+    sc.sockets = [];
+    kinds.forEach((k, i) => {
+      const sock = makeSocket(k, 1.0);
+      sock.position.set((i - 1) * (w * 0.22), -1.8, WORK_Z - 0.1);
+      sock.userData.filled = false;
+      puzzleGroup.add(sock);
+      sc.sockets.push(sock);
+    });
+    sc.grabbables = [];
+    const order = kinds.slice().sort(() => Math.random() - 0.5);
+    order.forEach((k, i) => {
+      const s = makeShapeMesh(k, 0.9);
+      s.position.set((i - 1) * (w * 0.22), 1.6, WORK_Z);
+      puzzleGroup.add(s);
+      sc.grabbables.push(makeGrabbable(s));
+    });
+    sc.placed = 0;
+  },
+  update() {
+    const sc = ctx.stageScratch;
+    if (sc.solved) return;
+    if (autoSolveDue()) {
+      for (const g of sc.grabbables) {
+        if (g.locked) continue;
+        const sock = sc.sockets.find((s) => !s.userData.filled && s.userData.shape === g.mesh.userData.shape);
+        if (sock) { sock.userData.filled = true; g.locked = true; sc.placed++; snapTo(g, sock.position.clone().setZ(WORK_Z)); }
+      }
+    }
+    if (hands.length >= 1) {
+      updateGrab(ctx, hands[0], sc.grabbables, (g, p) => {
+        if (g.locked) return;
+        const sock = sc.sockets.find((s) =>
+          !s.userData.filled && s.userData.shape === g.mesh.userData.shape &&
+          Math.hypot(s.position.x - g.mesh.position.x, s.position.y - g.mesh.position.y) < CONFIG.snapTolWorld * 1.4);
+        if (sock) {
+          sock.userData.filled = true; g.locked = true; sc.placed++;
+          sparkleAt(sock.position, 0.1);
+          snapTo(g, sock.position.clone().setZ(WORK_Z));
+        }
+      });
+    }
+    if (sc.placed >= 3) collectPieceAndAdvance(new THREE.Vector3(0, -1.8, WORK_Z));
+  },
+  exit() {},
+};
+
+// A — Assembly: drag the pieces into a frame; the assembled puzzle spells
+// the ask, then hands to the question landing.
+const assemblyStage = {
+  id: 'assembly', kind: 'assembly', physics: 'ambient', hint: CONFIG.assembly.hint,
+  enter() {
+    clearPuzzleGroup();
+    document.getElementById('stage-puzzle').style.display = 'none';
+    document.getElementById('stage-assembly').style.display = 'block';
+    document.getElementById('assembly-hint').textContent = CONFIG.assembly.hint;
+    setTimeout(() => document.getElementById('assembly-hint').classList.add('show'), CONFIG.hintDelayMs);
+    const sc = ctx.stageScratch;
+    const words = CONFIG.ask.replace(/\n/g, ' ').split(/\s+/).filter(Boolean);
+    sc.words = words;
+    const { w } = worldBounds();
+    const n = words.length;
+    const span = Math.min(w * 0.8, n * 2.1);
+    const step = n > 1 ? span / (n - 1) : 0;
+    sc.slots = [];
+    sc.grabbables = [];
+    for (let i = 0; i < n; i++) {
+      const fx = (n === 1) ? 0 : -span / 2 + i * step;
+      // frame slot outline
+      const frame = makeSolid(new THREE.BoxGeometry(1.95, 1.3, 0.12), { opacity: 0.03, edgeOpacity: 0.22 });
+      frame.position.set(fx, 0.2, WORK_Z - 0.15);
+      puzzleGroup.add(frame);
+      sc.slots.push({ pos: new THREE.Vector3(fx, 0.2, WORK_Z), filled: false });
+      // scattered piece showing its word
+      const piece = makePiece(i, words[i]);
+      const angle = (i / n) * Math.PI * 2;
+      piece.position.set(Math.cos(angle) * w * 0.3, -2.2 + Math.sin(angle) * 1.2, WORK_Z);
+      puzzleGroup.add(piece);
+      sc.grabbables.push(makeGrabbable(piece));
+    }
+    sc.seated = 0;
+  },
+  update() {
+    const sc = ctx.stageScratch;
+    if (sc.done) return;
+    if (autoSolveDue() && !sc.solving) {
+      for (const g of sc.grabbables) {
+        if (g.locked) continue;
+        const slot = sc.slots.find((s) => !s.filled);
+        if (slot) { slot.filled = true; g.locked = true; sc.seated++; snapTo(g, slot.pos); }
+      }
+    }
+    if (hands.length >= 1 && !sc.solving) {
+      updateGrab(ctx, hands[0], sc.grabbables, (g, p) => {
+        if (g.locked) return;
+        let best = null, bestD = CONFIG.snapTolWorld * 1.8;
+        for (const s of sc.slots) {
+          if (s.filled) continue;
+          const d = Math.hypot(s.pos.x - g.mesh.position.x, s.pos.y - g.mesh.position.y);
+          if (d < bestD) { bestD = d; best = s; }
+        }
+        if (best) { best.filled = true; g.locked = true; sc.seated++; sparkleAt(best.pos, 0.1); snapTo(g, best.pos); }
+      });
+    }
+    if (sc.seated >= sc.slots.length && !sc.solving) {
+      sc.solving = true;
+      // reveal each word, then the lead-in, then hand to the question
+      for (const g of sc.grabbables) revealPieceWord(g.mesh, 800);
+      sparkleAt(new THREE.Vector3(0, 0.2, WORK_Z), 0.14);
+      const lead = document.getElementById('assembly-leadin');
+      lead.textContent = CONFIG.leadIn;
+      setTimeout(() => lead.classList.add('show'), 700);
+      setTimeout(() => { sc.done = true; lead.classList.remove('show'); enterQuestion(); }, 4200);
+    }
+  },
+  exit() {
+    document.getElementById('assembly-leadin').classList.remove('show');
+    document.getElementById('assembly-hint').classList.remove('show');
+    document.getElementById('stage-assembly').style.display = 'none';
+  },
+};
+
+// The playlist (rest beats interleaved between puzzles).
+const SEQUENCE = [
+  introStage,
+  stackStage,  makeRestStage(0),
+  cutStage,    makeRestStage(1),
+  rotateStage, makeRestStage(2),
+  placeStage,
+  assemblyStage,
+];
+
+// ═══════════════════════════════════════════════════════════════════
+//  Boot / listeners
+// ═══════════════════════════════════════════════════════════════════
+
+// Apply CONFIG copy to the opening screen.
+(function applyOpeningCopy() {
+  const l1 = document.getElementById('welcome-line1');
+  const sub = document.getElementById('welcome-sub');
+  if (l1) l1.innerHTML = CONFIG.opening.line1.replace(/\n/g, '<br/>');
+  if (sub) sub.innerHTML = CONFIG.opening.sub.replace(/\n/g, '<br/>');
+})();
 
 // Initial welcome
 showStage('stage-welcome');
@@ -1297,7 +2135,9 @@ document.getElementById('btn-camera').addEventListener('click', async () => {
     await initMediaPipe();
     loading.classList.add('hide');
     document.getElementById('preview-frame').classList.add('visible');
-    setStage(Stage.CALIBRATE);
+    stage = 'calibrate';
+    calibrateHoldFrames = 0;
+    showStage('stage-calibrate');
   } catch (err) {
     console.error(err);
     loading.classList.add('hide');
@@ -1307,28 +2147,8 @@ document.getElementById('btn-camera').addEventListener('click', async () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════
-//  Awakening helpers
+//  Particle helpers (ambient field + accents)
 // ═══════════════════════════════════════════════════════════════════
-
-function renderTicks() {
-  const wrap = document.getElementById('progress');
-  wrap.innerHTML = '';
-  for (let i = 0; i < CONFIG.messages.length; i++) {
-    const d = document.createElement('div');
-    d.className = 'tick' + (i <= state.messageIndex ? ' lit' : '');
-    wrap.appendChild(d);
-  }
-}
-
-function showMessage(idx) {
-  const m = document.getElementById('message-reveal');
-  const t = document.getElementById('message-text');
-  m.classList.remove('show');
-  setTimeout(() => {
-    t.innerHTML = CONFIG.messages[idx].replace(/\n/g, '<br/>');
-    m.classList.add('show');
-  }, 450);
-}
 
 function collectNearPoint(centerWorld, radius) {
   let collected = 0;
@@ -1398,6 +2218,12 @@ function triggerCelebrationBurst() {
 const hands = [];
 function updateHandsWorld() {
   hands.length = 0;
+  // Debug: synthesize one fake hand from the mouse when no camera is running.
+  if (CONFIG.debug && mockHands.enabled && (!handResults || !handResults.landmarks || handResults.landmarks.length === 0)) {
+    const lms = mockHands.landmarks();
+    if (lms) hands.push({ lms, worldLms: lms.map(handToWorld) });
+    return;
+  }
   if (!handResults || !handResults.landmarks) return;
   for (const lms of handResults.landmarks) {
     hands.push({ lms, worldLms: lms.map(handToWorld) });
@@ -1431,8 +2257,8 @@ function applyHandForces(strength = 0.12) {
 }
 
 function integrateParticles(dt) {
-  const homeStrength = (stage === Stage.HEART || stage === Stage.QUESTION) ? 0.06 : 0.018;
-  const damping = (stage === Stage.CELEBRATION) ? 0.992 : 0.94;
+  const homeStrength = (physicsMode === 'gather') ? 0.06 : 0.018;
+  const damping = (physicsMode === 'burst') ? 0.992 : 0.94;
 
   for (let i = 0; i < N; i++) {
     if (alive[i] < 0.5) continue;
@@ -1451,66 +2277,8 @@ function integrateParticles(dt) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-//  Per-stage logic
+//  Calibrate + reused question/celebration landing logic
 // ═══════════════════════════════════════════════════════════════════
-
-function logicCalibrate() {
-  if (hands.length >= 1) state.calibrateHoldFrames++;
-  else state.calibrateHoldFrames = Math.max(0, state.calibrateHoldFrames - 2);
-
-  applyHandForces(0.18);
-
-  if (state.calibrateHoldFrames > 75) {
-    const panel = document.querySelector('#stage-calibrate .panel');
-    if (panel) panel.style.opacity = '0';
-    setTimeout(() => setStage(Stage.AWAKENING), 800);
-    state.calibrateHoldFrames = -9999;
-  }
-}
-
-function logicAwakening() {
-  // Gentle ambient gesture — hands softly shape particles without demanding precision
-  applyHandForces(0.06);
-
-  const now = performance.now();
-  const elapsed = now - state.messageStartedAt;
-
-  // Auto-advance after dwell time elapses
-  if (elapsed > CONFIG.messageDwellMs) {
-    if (state.messageIndex < CONFIG.messages.length - 1) {
-      advanceMessage();
-    } else if (elapsed > CONFIG.messageDwellMs + 2400) {
-      // Linger on the last message a beat longer, then move on
-      setStage(Stage.HEART);
-      state.messageStartedAt = -999999;
-      return;
-    }
-  }
-
-  // Pinch — optional skip-ahead. Brief grace period prevents accidental skip
-  // immediately after a new message appears.
-  let anyPinch = false;
-  for (const h of hands) if (isPinching(h.lms)) { anyPinch = true; break; }
-
-  if (anyPinch && !state.pinchActive && elapsed > 800) {
-    state.pinchActive = true;
-    if (state.messageIndex < CONFIG.messages.length - 1) {
-      advanceMessage();
-    } else {
-      setStage(Stage.HEART);
-      state.messageStartedAt = -999999;
-    }
-  } else if (!anyPinch) {
-    state.pinchActive = false;
-  }
-}
-
-function advanceMessage() {
-  state.messageIndex++;
-  state.messageStartedAt = performance.now();
-  showMessage(state.messageIndex);
-  renderTicks();
-}
 
 // Stable palm-center estimate: average of wrist and the four MCP knuckles
 function getPalmCenter(hand) {
@@ -1519,49 +2287,30 @@ function getPalmCenter(hand) {
   return c.multiplyScalar(1/5);
 }
 
-function logicHeart() {
-  if (hands.length < 1) {
-    // No hand visible — gentle decay so it doesn't lock once almost done
-    state.heartHoldFrames = Math.max(0, state.heartHoldFrames - 1);
-    return;
-  }
-  const hand = hands[0];
+function logicCalibrate() {
+  if (hands.length >= 1) calibrateHoldFrames++;
+  else calibrateHoldFrames = Math.max(0, calibrateHoldFrames - 2);
 
-  if (!isOpenHand(hand.lms)) {
-    // Hand present but not open — slow decay, no heart targets
-    state.heartHoldFrames = Math.max(0, state.heartHoldFrames - 1);
-    return;
-  }
+  applyHandForces(0.18);
 
-  // Place the heart above her palm (toward her fingers), following hand orientation
-  const palm = getPalmCenter(hand);
-  const palmUp = hand.worldLms[9].clone().sub(hand.worldLms[0]).normalize();
-  const targetCenter = palm.add(palmUp.multiplyScalar(0.55));
-
-  // Smooth the heart center to absorb tracking jitter
-  if (!state.heartCenter) state.heartCenter = targetCenter.clone();
-  state.heartCenter.lerp(targetCenter, 0.14);
-
-  // Heart grows from nothing to full size
-  const targetScale = 0.85;
-  state.heartScaleCurrent += (targetScale - state.heartScaleCurrent) * 0.08;
-  setHeartTargets(state.heartCenter, state.heartScaleCurrent);
-
-  state.heartHoldFrames++;
-  if (state.heartHoldFrames > CONFIG.heartHoldFrames) {
-    setStage(Stage.QUESTION);
-    state.heartHoldFrames = -9999;
+  if (calibrateHoldFrames > 75) {
+    const panel = document.querySelector('#stage-calibrate .panel');
+    if (panel) panel.style.opacity = '0';
+    calibrateHoldFrames = -9999;
+    setTimeout(() => {
+      document.getElementById('stage-calibrate').style.display = 'none';
+      startSequencer();
+    }, 800);
   }
 }
 
 function logicQuestion() {
-  const elapsedMs = performance.now() - state.questionShownAt;
+  const elapsedMs = performance.now() - ctx.questionShownAt;
   const t = elapsedMs / 1000;
 
-  // Heart drifts to center-screen and breathes there
+  // A heart breathes at center-screen behind the question.
   const breath = 0.85 + 0.08 * Math.sin(t * 1.8);
-  const center = new THREE.Vector3(0, -0.6, 0);
-  setHeartTargets(center, 1.1 * breath);
+  setHeartTargets(new THREE.Vector3(0, -0.6, 0), 1.1 * breath);
 
   // Reading grace period — let her actually read the question first
   const readingGraceMs = 4200;
@@ -1573,24 +2322,23 @@ function logicQuestion() {
 
   // Yes detection — single open hand sustained
   const oneOpen = hands.length >= 1 && isOpenHand(hands[0].lms);
-  if (oneOpen) state.yesHoldFrames++;
-  else state.yesHoldFrames = Math.max(0, state.yesHoldFrames - 1);
+  if (oneOpen) ctx.yesHoldFrames++;
+  else ctx.yesHoldFrames = Math.max(0, ctx.yesHoldFrames - 1);
 
-  // Drive the visual fill so she can see "yes" being detected
-  const pct = Math.min(100, (state.yesHoldFrames / CONFIG.yesHoldFrames) * 100);
+  const pct = Math.min(100, (ctx.yesHoldFrames / CONFIG.yesHoldFrames) * 100);
   if (fill) fill.style.width = pct + '%';
 
-  if (state.yesHoldFrames > CONFIG.yesHoldFrames) {
-    setStage(Stage.CELEBRATION);
-    state.yesHoldFrames = -9999;
+  if (ctx.yesHoldFrames > CONFIG.yesHoldFrames) {
+    ctx.yesHoldFrames = -9999;
+    enterCelebration();
   }
 }
 
 function logicCelebration() {
-  const elapsed = (performance.now() - state.burstStartedAt) / 1000;
+  const elapsed = (performance.now() - ctx.burstStartedAt) / 1000;
   const beat = Math.floor(elapsed / 4);
-  if (state.lastBeat !== beat) {
-    state.lastBeat = beat;
+  if (ctx.lastBeat !== beat) {
+    ctx.lastBeat = beat;
     const cx = (Math.random() - 0.5) * 2.5;
     const cy = -2.2;
     const startCenter = new THREE.Vector3(cx, cy, (Math.random() - 0.5) * 0.5);
@@ -1609,6 +2357,83 @@ function logicCelebration() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+//  Debug aids (mock hands from mouse, keyboard jumps, HUD) — ?debug=1
+// ═══════════════════════════════════════════════════════════════════
+
+const mockHands = {
+  enabled: false,
+  nx: 0.5, ny: 0.5,    // normalized cursor (already mirrored handling below)
+  pinch: false,
+  // Build a plausible 21-landmark hand around the cursor. Open palm by
+  // default; holding Space / mouse-down pinches (thumb tip near index tip).
+  landmarks() {
+    const cx = this.nx, cy = this.ny, s = 0.12;
+    const L = new Array(21);
+    const set = (i, dx, dy) => { L[i] = { x: cx + dx * s, y: cy + dy * s, z: 0 }; };
+    set(0, 0, 1.2);                              // wrist
+    // thumb (1-4)
+    set(1, -0.6, 0.8); set(2, -0.9, 0.4); set(3, -1.0, 0.1);
+    set(4, this.pinch ? 0.05 : -1.1, this.pinch ? -0.55 : -0.2);
+    // index (5-8)
+    set(5, -0.2, 0.2); set(6, -0.2, -0.3); set(7, -0.15, -0.7); set(8, 0.1, -0.9);
+    // middle (9-12)
+    set(9, 0.15, 0.2); set(10, 0.2, -0.35); set(11, 0.22, -0.8); set(12, 0.24, -1.15);
+    // ring (13-16)
+    set(13, 0.5, 0.25); set(14, 0.6, -0.25); set(15, 0.65, -0.65); set(16, 0.68, -1.0);
+    // pinky (17-20)
+    set(17, 0.8, 0.35); set(18, 0.95, 0.0); set(19, 1.0, -0.3); set(20, 1.05, -0.6);
+    return L;
+  },
+};
+
+const debugHud = document.createElement('div');
+function updateDebugHud() {
+  if (!debugHud.parentNode) { debugHud.className = 'debug-hud'; document.body.appendChild(debugHud); }
+  const sc = ctx.stageScratch || {};
+  debugHud.textContent =
+    `stage: ${stage}${current ? ' / ' + current.id : ''}\n` +
+    `mock: ${mockHands.enabled ? 'on' : 'off'}  pinch: ${ctx.pinch.active ? 'Y' : 'n'} (${(ctx.pinch.lastRatio||0).toFixed(2)})\n` +
+    `grabbed: ${ctx.grabbed ? (ctx.grabbed.mesh.userData.kind || '?') : '—'}\n` +
+    `pieces: ${ctx.pieces.length}/${CONFIG.pieceCount}  hold: ${sc.hold ?? sc.placed ?? sc.seated ?? '-'}`;
+}
+
+if (CONFIG.debug) {
+  window.addEventListener('mousemove', (e) => {
+    // Mirror x to match handToWorld's mirroring so the hand tracks the cursor.
+    mockHands.nx = 1 - e.clientX / window.innerWidth;
+    mockHands.ny = e.clientY / window.innerHeight;
+  });
+  window.addEventListener('mousedown', () => { mockHands.pinch = true; });
+  window.addEventListener('mouseup', () => { mockHands.pinch = false; });
+  const debugLeaveFrontMatter = () => {
+    hideOverlayStages();
+    document.getElementById('loading').classList.add('hide');
+    document.getElementById('stage-puzzle').style.display = 'block';
+  };
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') { mockHands.pinch = true; e.preventDefault(); return; }
+    const k = e.key.toLowerCase();
+    if (k === 'm') { mockHands.enabled = !mockHands.enabled; }
+    else if (k === ']') { if (stage === 'puzzle') advanceStage(); }
+    else if (k === '[') { if (stage === 'puzzle' && seqIndex > 0) { seqIndex -= 2; advanceStage(); } }
+    else if (k === 'a') { debugLeaveFrontMatter(); enterQuestion(); }
+    else if (k === 'c') { debugLeaveFrontMatter(); enterCelebration(); }
+    else if (k === 'r') { location.reload(); }
+    else if (k === 's') { // force-solve current puzzle (trip the auto-solve)
+      if (current) ctx.stageEnteredAt = -CONFIG.autoSolveMs;
+    }
+    else if (/^[1-9]$/.test(k)) {
+      const idx = parseInt(k, 10) - 1;
+      if (idx < SEQUENCE.length) { debugLeaveFrontMatter(); seqIndex = idx - 1; advanceStage(); }
+    }
+  });
+  window.addEventListener('keyup', (e) => { if (e.code === 'Space') mockHands.pinch = false; });
+  // Auto-enable mock hands so the experience is drivable without a camera.
+  mockHands.enabled = true;
+  console.log('[debug] enabled — keys: m mock, ] next, [ prev, 1-9 jump, a ask, c celebrate, s solve, r reload; mouse/Space = pinch');
+}
+
+// ═══════════════════════════════════════════════════════════════════
 //  Main loop
 // ═══════════════════════════════════════════════════════════════════
 
@@ -1620,21 +2445,26 @@ function loop() {
   last = now;
 
   particleMat.uniforms.uTime.value = now * 0.001;
+  ctx.now = now;
+  ctx.dt = dt;
 
   if (handLandmarker && video.readyState >= 2 && video.currentTime !== lastVideoTime) {
     lastVideoTime = video.currentTime;
     try { handResults = handLandmarker.detectForVideo(video, now); } catch (e) {}
     updateHandsWorld();
     drawHandOverlay();
+  } else if (CONFIG.debug && mockHands.enabled) {
+    updateHandsWorld();
   }
 
-  switch (stage) {
-    case Stage.CALIBRATE:    logicCalibrate(); break;
-    case Stage.AWAKENING:    logicAwakening(); break;
-    case Stage.HEART:        logicHeart(); break;
-    case Stage.QUESTION:     logicQuestion(); break;
-    case Stage.CELEBRATION:  logicCelebration(); break;
-  }
+  updateTweens(now);
+
+  if (stage === 'calibrate')          logicCalibrate();
+  else if (stage === 'puzzle')        { if (current && current.update) current.update(ctx); }
+  else if (stage === 'question')      logicQuestion();
+  else if (stage === 'celebration')   logicCelebration();
+
+  if (CONFIG.debug) updateDebugHud();
 
   integrateParticles(dt * 60);
   renderer.render(scene, camera);
