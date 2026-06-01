@@ -909,6 +909,12 @@ const CONFIG = {
   assembly: { hint: "fit the pieces into the frame." },
   pieceCount: 4,          // number of puzzle stages = pieces collected
 
+  // ── Camera ────────────────────────────────────────────────────────
+  // 'environment' = rear camera (sees the scene directly, not mirrored)
+  // 'user'        = front/selfie camera (mirror it for a natural feel)
+  cameraFacing: 'environment',
+  mirror: false,          // flip horizontally; set true for the front camera
+
   // ── Engine ────────────────────────────────────────────────────────
   particleCount: 1500,    // sparse warm dust motes (also used by the finale)
   pinchThreshold: 0.45,
@@ -984,7 +990,9 @@ function worldBounds() {
 
 function handToWorld(lm) {
   const { w, h } = worldBounds();
-  const x = (0.5 - lm.x) * w;  // mirrored for natural feel
+  // Mirror only for the front/selfie camera; the rear camera sees directly.
+  const nx = CONFIG.mirror ? (0.5 - lm.x) : (lm.x - 0.5);
+  const x = nx * w;
   const y = (0.5 - lm.y) * h;
   const z = -(lm.z || 0) * 4;
   return new THREE.Vector3(x, y, z);
@@ -996,7 +1004,8 @@ const _ray = new THREE.Raycaster();
 const _tablePlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -TABLE_Y);
 const _ndc = new THREE.Vector2();
 function handToTable(lm) {
-  _ndc.set((0.5 - lm.x) * 2, (0.5 - lm.y) * 2); // mirror x; screen-up = +y
+  const nx = CONFIG.mirror ? (0.5 - lm.x) : (lm.x - 0.5);
+  _ndc.set(nx * 2, (0.5 - lm.y) * 2); // screen-up = +y
   _ray.setFromCamera(_ndc, camera);
   const out = new THREE.Vector3();
   if (!_ray.ray.intersectPlane(_tablePlane, out)) out.set(0, TABLE_Y, 0);
@@ -1496,7 +1505,7 @@ async function initMediaPipe() {
 
 async function startCamera() {
   const stream = await navigator.mediaDevices.getUserMedia({
-    video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+    video: { facingMode: { ideal: CONFIG.cameraFacing }, width: { ideal: 1280 }, height: { ideal: 720 } },
     audio: false,
   });
   video.srcObject = stream;
@@ -2297,6 +2306,9 @@ const SEQUENCE = [
   const sub = document.getElementById('welcome-sub');
   if (l1) l1.innerHTML = CONFIG.opening.line1.replace(/\n/g, '<br/>');
   if (sub) sub.innerHTML = CONFIG.opening.sub.replace(/\n/g, '<br/>');
+  // Mirror the camera preview only for the front/selfie camera.
+  const mirrorEl = document.querySelector('.preview-mirror');
+  if (mirrorEl) mirrorEl.style.transform = CONFIG.mirror ? 'scaleX(-1)' : 'none';
 })();
 
 // Initial welcome
@@ -2579,8 +2591,9 @@ function updateDebugHud() {
 
 if (CONFIG.debug) {
   window.addEventListener('mousemove', (e) => {
-    // Mirror x to match handToWorld's mirroring so the hand tracks the cursor.
-    mockHands.nx = 1 - e.clientX / window.innerWidth;
+    // Match the live coordinate mapping (mirror only for the front camera).
+    const fx = e.clientX / window.innerWidth;
+    mockHands.nx = CONFIG.mirror ? (1 - fx) : fx;
     mockHands.ny = e.clientY / window.innerHeight;
   });
   window.addEventListener('mousedown', () => { mockHands.pinch = true; });
