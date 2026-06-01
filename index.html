@@ -1437,6 +1437,60 @@ function clearPuzzleGroup() {
   }
 }
 
+// ── Hand cursor: a reticle on the desk showing where your hand grabs ──
+// Drawn over everything (depthTest off) so it's never hidden behind a piece.
+const cursorRingMat = new THREE.MeshBasicMaterial({ color: 0xf0e4cf, transparent: true, opacity: 0.6, depthTest: false });
+const cursorDotMat  = new THREE.MeshBasicMaterial({ color: 0xf0e4cf, transparent: true, opacity: 0.9, depthTest: false });
+const cursorGlowMat = new THREE.MeshBasicMaterial({ color: 0xffcf85, transparent: true, opacity: 0.0, depthTest: false });
+const handCursor = new THREE.Group();
+{
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.34, 0.46, 44), cursorRingMat);
+  ring.rotation.x = -Math.PI / 2;
+  const dot = new THREE.Mesh(new THREE.CircleGeometry(0.09, 24), cursorDotMat);
+  dot.rotation.x = -Math.PI / 2; dot.position.y = 0.001;
+  const glow = new THREE.Mesh(new THREE.RingGeometry(0.46, 0.72, 44), cursorGlowMat);
+  glow.rotation.x = -Math.PI / 2;
+  // four little brass ticks so it reads as a target
+  for (let k = 0; k < 4; k++) {
+    const tick = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 0.03), cursorRingMat);
+    tick.rotation.x = -Math.PI / 2;
+    const a = k * Math.PI / 2;
+    tick.position.set(Math.cos(a) * 0.58, 0, Math.sin(a) * 0.58);
+    tick.rotation.z = -a;
+    handCursor.add(tick);
+  }
+  handCursor.add(glow, ring, dot);
+}
+handCursor.traverse((o) => { o.renderOrder = 999; });
+handCursor.visible = false;
+scene.add(handCursor);
+
+// Update the cursor each frame to the hand's grab point on the desk; it
+// shrinks + turns gold while pinching, and pops when a grab latches.
+function updateHandCursor() {
+  const showable = current && (current.kind === 'overlay' || current.kind === 'puzzle' || current.kind === 'assembly');
+  if (!showable || hands.length < 1) { handCursor.visible = false; return; }
+  handCursor.visible = true;
+  const p = pinchMidTable(hands[0]);
+  handCursor.position.set(p.x, 0.08, p.z);
+
+  const pinching = ctx.pinch.active;
+  const targetScale = pinching ? 0.6 : 1.0;
+  let s = handCursor.scale.x;
+  if (ctx.pinch.justGrabbed) s = 1.15;                 // quick pop on latch
+  s += (targetScale - s) * 0.35;
+  handCursor.scale.set(s, s, s);
+
+  const c = pinching ? 0xffcf85 : 0xf0e4cf;
+  cursorRingMat.color.setHex(c);
+  cursorDotMat.color.setHex(c);
+  cursorRingMat.opacity = pinching ? 1.0 : 0.55;
+  cursorDotMat.opacity  = pinching ? 1.0 : 0.85;
+  // glow ring fades in while carrying something
+  const carrying = pinching && ctx.grabbed;
+  cursorGlowMat.opacity += ((carrying ? 0.5 : 0.0) - cursorGlowMat.opacity) * 0.2;
+}
+
 // ═══════════════════════════════════════════════════════════════════
 //  Heart geometry
 // ═══════════════════════════════════════════════════════════════════
@@ -2656,6 +2710,8 @@ function loop() {
   else if (stage === 'puzzle')        { if (current && current.update) current.update(ctx); }
   else if (stage === 'question')      logicQuestion();
   else if (stage === 'celebration')   logicCelebration();
+
+  updateHandCursor();
 
   if (CONFIG.debug) updateDebugHud();
 
