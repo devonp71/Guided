@@ -9,14 +9,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg-deep:    #0a0a0d;
-    --bg-warm:    #14110f;
-    --cream:      #f5ede0;
-    --cream-soft: rgba(245, 237, 224, 0.78);
-    --cream-dim:  rgba(245, 237, 224, 0.48);
-    --cream-quiet:rgba(245, 237, 224, 0.28);
-    --gold:       #d4a866;
-    --gold-deep:  #9a7842;
+    /* Light mode — bright, airy daytime desk */
+    --bg-deep:    #f1e9da;
+    --bg-warm:    #e8dcc6;
+    --cream:      #3b2c1c;   /* primary text — dark espresso on light */
+    --cream-soft: rgba(59, 44, 28, 0.80);
+    --cream-dim:  rgba(59, 44, 28, 0.52);
+    --cream-quiet:rgba(59, 44, 28, 0.32);
+    --gold:       #a8792b;   /* deepened brass so it reads on light */
+    --gold-deep:  #6f4e1c;
     --safe-top:    env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
@@ -58,11 +59,11 @@
     aspect-ratio: 3 / 4;
     border-radius: 14px;
     overflow: hidden;
-    border: 1px solid rgba(255, 245, 227, 0.18);
+    border: 1px solid rgba(59, 44, 28, 0.22);
     box-shadow:
-      0 12px 40px rgba(0, 0, 0, 0.6),
-      0 0 0 1px rgba(255, 245, 227, 0.04) inset,
-      0 0 30px rgba(212, 168, 102, 0.06);
+      0 12px 40px rgba(74, 52, 28, 0.22),
+      0 0 0 1px rgba(255, 255, 255, 0.4) inset,
+      0 0 30px rgba(168, 121, 43, 0.10);
     z-index: 6;
     opacity: 0;
     transform: translateY(-8px);
@@ -83,7 +84,7 @@
     position: absolute; inset: 0;
     width: 100%; height: 100%;
     object-fit: cover;
-    filter: brightness(0.62) contrast(0.92) saturate(0.85);
+    filter: brightness(0.98) contrast(0.95) saturate(0.92);
   }
   #preview-overlay {
     position: absolute; inset: 0;
@@ -130,7 +131,7 @@
     z-index: 3;
     pointer-events: none;
     background:
-      radial-gradient(ellipse 130% 110% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+      radial-gradient(ellipse 130% 110% at 50% 50%, transparent 58%, rgba(74, 52, 28, 0.16) 100%);
   }
 
   /* Film-grain texture overlay */
@@ -191,9 +192,9 @@
     position: absolute;
     inset: -10% -8%;
     background: radial-gradient(ellipse 70% 50% at center,
-      rgba(10, 7, 13, 0.88) 0%,
-      rgba(10, 7, 13, 0.55) 38%,
-      rgba(10, 7, 13, 0) 75%);
+      rgba(250, 245, 235, 0.92) 0%,
+      rgba(250, 245, 235, 0.62) 38%,
+      rgba(250, 245, 235, 0) 75%);
     z-index: -1;
     pointer-events: none;
   }
@@ -359,9 +360,9 @@
     position: absolute;
     inset: -80px -40px;
     background: radial-gradient(ellipse at center,
-      rgba(10, 7, 13, 0.82) 0%,
-      rgba(10, 7, 13, 0.4) 45%,
-      rgba(10, 7, 13, 0) 75%);
+      rgba(250, 245, 235, 0.88) 0%,
+      rgba(250, 245, 235, 0.5) 45%,
+      rgba(250, 245, 235, 0) 75%);
     z-index: -1;
     pointer-events: none;
   }
@@ -393,7 +394,7 @@
   .tick {
     width: 1px;
     height: 11px;
-    background: rgba(255, 245, 227, 0.2);
+    background: rgba(59, 44, 28, 0.28);
     transition: all 800ms cubic-bezier(0.16, 1, 0.3, 1);
   }
   .tick.lit {
@@ -446,8 +447,8 @@
   .inv-slot {
     width: 22px; height: 28px;
     border-radius: 4px;
-    border: 1px solid rgba(255, 245, 227, 0.18);
-    background: rgba(245, 237, 224, 0.03);
+    border: 1px solid rgba(59, 44, 28, 0.24);
+    background: rgba(59, 44, 28, 0.05);
     transition: all 700ms cubic-bezier(0.16, 1, 0.3, 1);
   }
   .inv-slot.filled {
@@ -532,7 +533,7 @@
     position: absolute;
     inset: -30px -20px;
     background: radial-gradient(ellipse 60% 50% at center,
-      rgba(10, 7, 13, 0.78) 0%, transparent 75%);
+      rgba(250, 245, 235, 0.86) 0%, transparent 75%);
     z-index: -1;
   }
   .question-stage .the-ask {
@@ -591,7 +592,7 @@
   .answer-progress {
     width: 96px;
     height: 1px;
-    background: rgba(255, 245, 227, 0.10);
+    background: rgba(59, 44, 28, 0.16);
     position: relative;
     opacity: 0;
     transition: opacity 1200ms ease 4200ms;
@@ -630,8 +631,8 @@
       opacity 2400ms cubic-bezier(0.16, 1, 0.3, 1),
       transform 3000ms cubic-bezier(0.16, 1, 0.3, 1);
     text-shadow:
-      0 0 50px rgba(245, 237, 224, 0.25),
-      0 0 120px rgba(212, 168, 102, 0.18);
+      0 2px 30px rgba(255, 252, 246, 0.7),
+      0 0 90px rgba(168, 121, 43, 0.22);
     letter-spacing: -0.5px;
   }
   .celebration.show .yes { opacity: 1; transform: scale(1); }
@@ -930,21 +931,21 @@ try {
 } catch (e) {}
 
 // ═══════════════════════════════════════════════════════════════════
-//  Three.js scene — warm lamp-lit tabletop
+//  Three.js scene — bright, airy daytime tabletop (light mode)
 // ═══════════════════════════════════════════════════════════════════
 
 const canvas = document.getElementById('three-canvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0x130d08, 1);
+renderer.setClearColor(0xf1e9da, 1);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.15;
+renderer.toneMappingExposure = 1.05;
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0x130d08, 11, 30);
+scene.fog = new THREE.Fog(0xf1e9da, 15, 36);
 
 const camera = new THREE.PerspectiveCamera(46, window.innerWidth / window.innerHeight, 0.1, 100);
 // Look down at the desk surface from slightly above and in front.
@@ -953,9 +954,8 @@ camera.lookAt(0, 0.1, -0.6);
 
 const TABLE_Y = 0;   // the desk surface; objects rest on it
 
-// Warm lighting rig (DirectionalLight intensities are distance-independent,
-// so they read consistently regardless of three's lighting mode).
-const keyLight = new THREE.DirectionalLight(0xffe2b0, 2.7);
+// Daylight rig — a soft window key + bright sky fill for an airy look.
+const keyLight = new THREE.DirectionalLight(0xfff4e2, 2.1);
 keyLight.position.set(-5.5, 9.5, 5.0);
 keyLight.castShadow = true;
 keyLight.shadow.mapSize.set(2048, 2048);
@@ -966,19 +966,20 @@ keyLight.shadow.camera.right = 10;
 keyLight.shadow.camera.top = 10;
 keyLight.shadow.camera.bottom = -10;
 keyLight.shadow.bias = -0.0004;
-keyLight.shadow.radius = 4;
+keyLight.shadow.radius = 5;
 scene.add(keyLight);
 scene.add(keyLight.target);
 keyLight.target.position.set(0, 0, -0.5);
 
-// A warm "desk lamp" glow from the right adds a second highlight.
-const lampLight = new THREE.PointLight(0xffb466, 26, 28, 2);
-lampLight.position.set(5.0, 4.2, 3.2);
+// A soft warm bounce from the right (no longer a dim lamp).
+const lampLight = new THREE.PointLight(0xffe6c4, 9, 30, 2);
+lampLight.position.set(5.0, 4.6, 3.2);
 scene.add(lampLight);
 
-const hemiLight = new THREE.HemisphereLight(0xffe8cf, 0x271a0d, 0.55);
+// Bright sky/bounce fill lifts the shadows so the scene reads light.
+const hemiLight = new THREE.HemisphereLight(0xfffaf0, 0xcdb89a, 0.95);
 scene.add(hemiLight);
-scene.add(new THREE.AmbientLight(0xffffff, 0.16));
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
 
 function worldBounds() {
   const dist = camera.position.z;
@@ -1054,57 +1055,39 @@ const alive      = new Float32Array(N);
 
 const { w: WW, h: HH } = worldBounds();
 
-// Distribute uniformly across the full viewport with depth layers for parallax.
-// Slight density falloff in the center to keep the welcome text readable.
+// Sparse warm dust drifting in the air above the desk (not a starfield).
+// Colors are dark-warm so the motes read on the light background.
 function seedAmbient() {
   for (let i = 0; i < N; i++) {
-    // Depth bucket: far (background bokeh), mid, near (sharp foreground)
-    const depthRoll = Math.random();
-    let z;
-    if (depthRoll < 0.30)      z = -2.0 + Math.random() * 1.0;   // far
-    else if (depthRoll < 0.85) z = -1.0 + Math.random() * 1.5;   // mid
-    else                       z =  0.5 + Math.random() * 1.2;   // near
-
-    // Position with center density falloff so text stays readable
-    let x, y;
-    let attempt = 0;
-    do {
-      x = (Math.random() - 0.5) * WW * 1.35;
-      y = (Math.random() - 0.5) * HH * 1.20;
-      attempt++;
-      const inCenter = Math.abs(x) < WW * 0.36 && Math.abs(y) < HH * 0.26;
-      if (!inCenter || Math.random() < 0.22) break;
-    } while (attempt < 5);
+    const x = (Math.random() - 0.5) * WW * 1.5;
+    const y = 0.5 + Math.random() * 7.5;
+    const z = -5.0 + Math.random() * 8.0;
 
     positions[i*3+0] = x;
     positions[i*3+1] = y;
     positions[i*3+2] = z;
-    targets[i*3+0]   = x + (Math.random() - 0.5) * 0.7;
-    targets[i*3+1]   = y + (Math.random() - 0.5) * 0.7;
+    targets[i*3+0]   = x + (Math.random() - 0.5) * 0.6;
+    targets[i*3+1]   = y + (Math.random() - 0.5) * 0.6;
     targets[i*3+2]   = z;
-    velocities[i*3+0] = (Math.random() - 0.5) * 0.004;
-    velocities[i*3+1] = (Math.random() - 0.5) * 0.004;
+    velocities[i*3+0] = (Math.random() - 0.5) * 0.003;
+    velocities[i*3+1] = (Math.random() - 0.2) * 0.002;   // gentle upward drift
     velocities[i*3+2] = (Math.random() - 0.5) * 0.002;
 
-    // Color palette — cream-dominant, warm amber accents (no pink/rose)
+    // Warm brown/amber motes — dark enough to show on the light desk.
     const r = Math.random();
     let col;
-    if      (r < 0.62) col = [1.00, 0.96, 0.88];    // cream
-    else if (r < 0.86) col = [0.96, 0.83, 0.58];    // champagne
-    else if (r < 0.96) col = [0.82, 0.65, 0.42];    // muted amber
-    else               col = [0.55, 0.42, 0.28];    // deep amber (rare)
+    if      (r < 0.55) col = [0.52, 0.40, 0.24];   // warm brown
+    else if (r < 0.85) col = [0.66, 0.50, 0.30];   // amber
+    else               col = [0.42, 0.31, 0.18];   // deep brown (rare)
+    colors[i*3+0] = col[0];
+    colors[i*3+1] = col[1];
+    colors[i*3+2] = col[2];
 
-    // Dim distant particles (atmospheric depth)
-    const depthDim = z < -1 ? 0.55 : (z < 0 ? 0.85 : 1.0);
-    colors[i*3+0] = col[0] * depthDim;
-    colors[i*3+1] = col[1] * depthDim;
-    colors[i*3+2] = col[2] * depthDim;
-
-    // Size variation: bokeh + dust
+    // Mostly tiny dust, a few soft motes.
     const sz = Math.random();
-    if      (sz < 0.12) sizes[i] = 0.20 + Math.random() * 0.10;  // large soft bokeh
-    else if (sz < 0.68) sizes[i] = 0.07 + Math.random() * 0.05;  // medium
-    else                sizes[i] = 0.025 + Math.random() * 0.025; // tiny dust
+    if      (sz < 0.08) sizes[i] = 0.11 + Math.random() * 0.06;
+    else if (sz < 0.55) sizes[i] = 0.045 + Math.random() * 0.035;
+    else                sizes[i] = 0.02 + Math.random() * 0.02;
 
     alive[i] = 1;
   }
@@ -1133,7 +1116,7 @@ const particleMat = new THREE.ShaderMaterial({
   },
   transparent: true,
   depthWrite: false,
-  blending: THREE.AdditiveBlending,
+  blending: THREE.NormalBlending,
   vertexShader: `
     attribute vec3 color;
     attribute float aSize;
@@ -1159,8 +1142,8 @@ const particleMat = new THREE.ShaderMaterial({
     void main() {
       if (vAlive < 0.5) discard;
       vec4 tex = texture2D(uTex, gl_PointCoord);
-      // Softer additive output — particles recede behind content
-      gl_FragColor = vec4(vColor * tex.rgb * 0.78, tex.a);
+      // Normal blending so warm motes read as dust on the light desk.
+      gl_FragColor = vec4(vColor, tex.a * 0.85);
     }
   `,
 });
@@ -1230,14 +1213,15 @@ function makeWoodTexture(base, grain, reps = 1) {
 }
 
 const WOOD = {
-  walnut: new THREE.MeshStandardMaterial({ map: makeWoodTexture('#5a3b22', '#36210f'), roughness: 0.72, metalness: 0.05 }),
-  oak:    new THREE.MeshStandardMaterial({ map: makeWoodTexture('#7d5731', '#553a1d'), roughness: 0.68, metalness: 0.05 }),
+  // Medium warm woods that pop against the light oak desk.
+  walnut: new THREE.MeshStandardMaterial({ map: makeWoodTexture('#9a6838', '#724a26'), roughness: 0.66, metalness: 0.04 }),
+  oak:    new THREE.MeshStandardMaterial({ map: makeWoodTexture('#b9844a', '#946233'), roughness: 0.62, metalness: 0.04 }),
 };
-const BRASS = new THREE.MeshStandardMaterial({ color: 0xc8a24a, metalness: 0.92, roughness: 0.3 });
-const CREAM_INLAY = new THREE.MeshStandardMaterial({ color: 0xf0e4cf, roughness: 0.5, metalness: 0.0, emissive: 0x140d05, emissiveIntensity: 0.25 });
+const BRASS = new THREE.MeshStandardMaterial({ color: 0xcfa948, metalness: 0.9, roughness: 0.28 });
+const CREAM_INLAY = new THREE.MeshStandardMaterial({ color: 0xfbf3e3, roughness: 0.5, metalness: 0.0 });
 
-// Desk surface + warm room backdrop
-const tableMat = new THREE.MeshStandardMaterial({ map: makeWoodTexture('#3a2614', '#22130a', 5), roughness: 0.85, metalness: 0.04 });
+// Light oak desk surface + soft daytime room backdrop
+const tableMat = new THREE.MeshStandardMaterial({ map: makeWoodTexture('#d2bd92', '#b39c6c', 5), roughness: 0.8, metalness: 0.03 });
 const table = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), tableMat);
 table.rotation.x = -Math.PI / 2;
 table.position.y = TABLE_Y - 0.02;
@@ -1249,10 +1233,10 @@ function makeRoomBackdrop() {
   c.width = c.height = 256;
   const x = c.getContext('2d');
   const g = x.createLinearGradient(0, 0, 0, 256);
-  g.addColorStop(0, '#180f08'); g.addColorStop(0.6, '#271a0e'); g.addColorStop(1, '#3a2614');
+  g.addColorStop(0, '#f6efe1'); g.addColorStop(0.6, '#ece0ca'); g.addColorStop(1, '#ddccab');
   x.fillStyle = g; x.fillRect(0, 0, 256, 256);
-  const rg = x.createRadialGradient(196, 64, 8, 196, 64, 170);
-  rg.addColorStop(0, 'rgba(255,184,104,0.40)'); rg.addColorStop(1, 'rgba(255,184,104,0)');
+  const rg = x.createRadialGradient(196, 60, 8, 196, 60, 180);
+  rg.addColorStop(0, 'rgba(255,240,214,0.55)'); rg.addColorStop(1, 'rgba(255,240,214,0)');
   x.fillStyle = rg; x.fillRect(0, 0, 256, 256);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
@@ -1328,14 +1312,14 @@ function makeSocket(kind, size = 1.0) {
   let pad, rim;
   if (kind === 'cyl') {
     pad = new THREE.Mesh(new THREE.CylinderGeometry(size * 0.66, size * 0.66, 0.08, 32),
-      new THREE.MeshStandardMaterial({ color: 0x1c1108, roughness: 0.9 }));
+      new THREE.MeshStandardMaterial({ color: 0x6b5230, roughness: 0.9 }));
     rim = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CircleGeometry(size * 0.66, 32)),
       new THREE.LineBasicMaterial({ color: 0xc8a24a }));
     rim.rotation.x = -Math.PI / 2;
   } else {
     const seg = kind === 'pyr' ? 4 : 4;
     pad = new THREE.Mesh(new THREE.CylinderGeometry(size * 0.78, size * 0.78, 0.08, seg),
-      new THREE.MeshStandardMaterial({ color: 0x1c1108, roughness: 0.9 }));
+      new THREE.MeshStandardMaterial({ color: 0x6b5230, roughness: 0.9 }));
     pad.rotation.y = kind === 'pyr' ? Math.PI / 4 : Math.PI / 4;
     rim = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CylinderGeometry(size * 0.78, size * 0.78, 0.08, seg)),
       new THREE.LineBasicMaterial({ color: 0xc8a24a }));
@@ -1437,58 +1421,69 @@ function clearPuzzleGroup() {
   }
 }
 
-// ── Hand cursor: a reticle on the desk showing where your hand grabs ──
-// Drawn over everything (depthTest off) so it's never hidden behind a piece.
-const cursorRingMat = new THREE.MeshBasicMaterial({ color: 0xf0e4cf, transparent: true, opacity: 0.6, depthTest: false });
-const cursorDotMat  = new THREE.MeshBasicMaterial({ color: 0xf0e4cf, transparent: true, opacity: 0.9, depthTest: false });
-const cursorGlowMat = new THREE.MeshBasicMaterial({ color: 0xffcf85, transparent: true, opacity: 0.0, depthTest: false });
+// ── Hand cursor + grab feedback (drawn over everything) ──────────────
+// OPEN hand → a dark hollow reticle. PINCH → a bright gold filled disc with
+// a glow halo, plus a gold ring under whatever object you're holding. The
+// two states look completely different so grabbing is unmistakable.
+const cursorRingMat = new THREE.MeshBasicMaterial({ color: 0x3b2c1c, transparent: true, opacity: 0.72, depthTest: false });
+const cursorFillMat = new THREE.MeshBasicMaterial({ color: 0xc79a33, transparent: true, opacity: 0.0, depthTest: false });
+const cursorDotMat  = new THREE.MeshBasicMaterial({ color: 0x3b2c1c, transparent: true, opacity: 0.9, depthTest: false });
+const cursorGlowMat = new THREE.MeshBasicMaterial({ color: 0xe7b53f, transparent: true, opacity: 0.0, depthTest: false });
 const handCursor = new THREE.Group();
 {
-  const ring = new THREE.Mesh(new THREE.RingGeometry(0.34, 0.46, 44), cursorRingMat);
-  ring.rotation.x = -Math.PI / 2;
-  const dot = new THREE.Mesh(new THREE.CircleGeometry(0.09, 24), cursorDotMat);
-  dot.rotation.x = -Math.PI / 2; dot.position.y = 0.001;
-  const glow = new THREE.Mesh(new THREE.RingGeometry(0.46, 0.72, 44), cursorGlowMat);
+  const glow = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.92, 48), cursorGlowMat);
   glow.rotation.x = -Math.PI / 2;
-  // four little brass ticks so it reads as a target
-  for (let k = 0; k < 4; k++) {
-    const tick = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 0.03), cursorRingMat);
-    tick.rotation.x = -Math.PI / 2;
-    const a = k * Math.PI / 2;
-    tick.position.set(Math.cos(a) * 0.58, 0, Math.sin(a) * 0.58);
-    tick.rotation.z = -a;
-    handCursor.add(tick);
-  }
-  handCursor.add(glow, ring, dot);
+  const fill = new THREE.Mesh(new THREE.CircleGeometry(0.42, 36), cursorFillMat);
+  fill.rotation.x = -Math.PI / 2; fill.position.y = 0.001;
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.36, 0.5, 48), cursorRingMat);
+  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.002;
+  const dot = new THREE.Mesh(new THREE.CircleGeometry(0.08, 24), cursorDotMat);
+  dot.rotation.x = -Math.PI / 2; dot.position.y = 0.003;
+  handCursor.add(glow, fill, ring, dot);
 }
-handCursor.traverse((o) => { o.renderOrder = 999; });
+handCursor.traverse((o) => { o.renderOrder = 1000; });
 handCursor.visible = false;
 scene.add(handCursor);
 
-// Update the cursor each frame to the hand's grab point on the desk; it
-// shrinks + turns gold while pinching, and pops when a grab latches.
+// A gold ring on the desk that highlights the object currently held.
+const heldGlowMat = new THREE.MeshBasicMaterial({ color: 0xe7b53f, transparent: true, opacity: 0.0, depthTest: false });
+const heldGlow = new THREE.Mesh(new THREE.RingGeometry(0.72, 1.08, 48), heldGlowMat);
+heldGlow.rotation.x = -Math.PI / 2;
+heldGlow.renderOrder = 998;
+heldGlow.visible = false;
+scene.add(heldGlow);
+
+// Update the cursor each frame to the hand's grab point on the desk.
 function updateHandCursor() {
   const showable = current && (current.kind === 'overlay' || current.kind === 'puzzle' || current.kind === 'assembly');
-  if (!showable || hands.length < 1) { handCursor.visible = false; return; }
+  if (!showable || hands.length < 1) { handCursor.visible = false; heldGlow.visible = false; return; }
   handCursor.visible = true;
   const p = pinchMidTable(hands[0]);
   handCursor.position.set(p.x, 0.08, p.z);
 
   const pinching = ctx.pinch.active;
-  const targetScale = pinching ? 0.6 : 1.0;
-  let s = handCursor.scale.x;
-  if (ctx.pinch.justGrabbed) s = 1.15;                 // quick pop on latch
-  s += (targetScale - s) * 0.35;
+  let target = pinching ? 0.82 : 1.0;          // tightens a touch when gripping
+  let s = handCursor.scale.x || 1;
+  if (ctx.pinch.justGrabbed) s = 1.2;          // quick pop on latch
+  s += (target - s) * 0.3;
   handCursor.scale.set(s, s, s);
 
-  const c = pinching ? 0xffcf85 : 0xf0e4cf;
-  cursorRingMat.color.setHex(c);
-  cursorDotMat.color.setHex(c);
-  cursorRingMat.opacity = pinching ? 1.0 : 0.55;
-  cursorDotMat.opacity  = pinching ? 1.0 : 0.85;
-  // glow ring fades in while carrying something
-  const carrying = pinching && ctx.grabbed;
-  cursorGlowMat.opacity += ((carrying ? 0.5 : 0.0) - cursorGlowMat.opacity) * 0.2;
+  cursorRingMat.color.setHex(pinching ? 0xb98a2a : 0x3b2c1c);
+  cursorRingMat.opacity = pinching ? 1.0 : 0.72;
+  cursorDotMat.color.setHex(pinching ? 0xfff3d8 : 0x3b2c1c);
+  cursorFillMat.opacity += ((pinching ? 0.62 : 0.0) - cursorFillMat.opacity) * 0.4;
+  cursorGlowMat.opacity += ((pinching ? 0.5 : 0.0) - cursorGlowMat.opacity) * 0.3;
+
+  // Highlight the held object with a gold ring on the desk beneath it.
+  if (ctx.grabbed) {
+    heldGlow.visible = true;
+    const m = ctx.grabbed.mesh.position;
+    heldGlow.position.set(m.x, 0.05, m.z);
+    heldGlowMat.opacity += (0.6 - heldGlowMat.opacity) * 0.25;
+  } else {
+    heldGlowMat.opacity += (0.0 - heldGlowMat.opacity) * 0.3;
+    if (heldGlowMat.opacity < 0.02) heldGlow.visible = false;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1977,6 +1972,13 @@ function enterCelebration() {
   stage = 'celebration';
   ctx.burstStartedAt = performance.now();
   ctx.lastBeat = -1;
+  // Recolor the motes to a warm rose/gold confetti so they pop on the light bg.
+  const fes = [[0.86, 0.36, 0.40], [0.93, 0.62, 0.30], [0.78, 0.30, 0.46], [0.88, 0.74, 0.36]];
+  for (let i = 0; i < N; i++) {
+    const c = fes[(Math.random() * fes.length) | 0];
+    colors[i*3] = c[0]; colors[i*3+1] = c[1]; colors[i*3+2] = c[2];
+  }
+  particleGeom.attributes.color.needsUpdate = true;
   triggerCelebrationBurst();
 }
 
@@ -2045,7 +2047,7 @@ function makeTargetPad(size = 1.4) {
   const g = new THREE.Group();
   const pad = new THREE.Mesh(
     new THREE.CylinderGeometry(size, size, 0.06, 36),
-    new THREE.MeshStandardMaterial({ color: 0x241405, roughness: 0.95 })
+    new THREE.MeshStandardMaterial({ color: 0x6b5230, roughness: 0.95 })
   );
   pad.position.y = 0.03; pad.receiveShadow = true;
   const rim = new THREE.LineSegments(
@@ -2280,7 +2282,7 @@ const assemblyStage = {
     const rowZ = -2.2;
     const span = Math.min(4.6, n * (tileW + 0.25));
     const step = n > 1 ? span / (n - 1) : 0;
-    const padMat = new THREE.MeshStandardMaterial({ color: 0x241405, roughness: 0.95 });
+    const padMat = new THREE.MeshStandardMaterial({ color: 0x6b5230, roughness: 0.95 });
     sc.slots = [];
     sc.grabbables = [];
 
